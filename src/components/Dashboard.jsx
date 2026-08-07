@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase, supabaseAdmin } from '../utils/supabaseClient';
 import TiltCard from './TiltCard';
-import { LogOut, Save, Loader2, CheckCircle2, AlertCircle, Phone, Sparkles, Shield, User, Settings, HelpCircle, MessageSquare, Edit2, Users, UsersIcon } from 'lucide-react';
+import { LogOut, Save, Loader2, CheckCircle2, AlertCircle, Phone, Sparkles, Shield, User, Settings, HelpCircle, MessageSquare, Edit2, Users } from 'lucide-react';
 
 const getWeb3FormsKey = () => atob("N2FhNTQxMzMtYWMzMS00MTY3LWI3N2YtY2MzOGRkNzNhMjIw");
 const getHelpWeb3FormsKey = () => "6e12e079-3a7a-4550-9962-abca5fe691c9";
@@ -509,7 +509,7 @@ export default function Dashboard({ user, onSignOut }) {
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                    <UsersIcon size={24} color="#ffffff" />
+                    <Users size={24} color="#ffffff" />
                     <div>
                       <strong style={{ display: 'block', fontSize: '1rem' }}>View Registered Users</strong>
                       <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>Modify plan roles, phone numbers, and user metadata.</span>

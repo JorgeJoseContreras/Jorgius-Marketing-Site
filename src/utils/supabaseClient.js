@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 
 const getSupabaseUrl = () => atob("aHR0cHM6Ly9yZGZnaWpzanNoZWd6emhjemN5ZC5zdXBhYmFzZS5jbw==");
-const getSupabaseAnonKey = () => atob("ZXlKaGJHY2lPaUpJVXpJMU5pSXNJblI1Y0NJNklrcFhWQ0o5LmV5SnBjM01pT2lKemRYQmhZbUZ6WlNJc0luSmxaaUk2SW5Ka1ptZHBhbE5xYzJobFozcDZhR042WTNsa0lpd2ljbTlzWlNJNkltRnViMjRpTENKcFlYUWlPakUzT0RZeE16RTNNeklzSW1WNGNDSTZNakV3TVRjd056Y3pNbjAuZExUbGZMOXo0Z1V6bDQ1RWRhX3RlTVk3TnhmbEZha0dNMEdFRGpzR1JHNA==");
+const getSupabaseAnonKey = () => atob("c2JfcHVibGlzaGFibGVfY010aF81N3g5VWd4TGZtRWI2YzRGZ19wbzFKby1LcA==");
 
 export const supabase = createClient(getSupabaseUrl(), getSupabaseAnonKey());

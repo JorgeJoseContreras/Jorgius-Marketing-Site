@@ -23,13 +23,10 @@ export default function App() {
       {/* Interactive iMessage Playground */}
       <section id="demo" style={{ padding: '24px 20px 48px 20px', position: 'relative', zIndex: 2, maxWidth: '1200px', margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-          <div className="pulse-badge" style={{ marginBottom: '8px' }}>
-            <span>Interactive Simulator</span>
-          </div>
-          <h2 style={{ fontSize: 'clamp(1.4rem, 2.5vw, 2rem)', fontWeight: '800', fontFamily: 'var(--font-heading)', marginBottom: '4px' }}>
+          <h2 style={{ fontSize: 'clamp(1.8rem, 3.2vw, 2.5rem)', fontWeight: '800', fontFamily: 'var(--font-heading)', marginBottom: '6px' }}>
             Test Jorgius
           </h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', maxWidth: '500px', margin: '0 auto' }}>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', maxWidth: '500px', margin: '0 auto' }}>
             Click prompt pills below to simulate sending messages to Jorgius in iMessage.
           </p>
         </div>

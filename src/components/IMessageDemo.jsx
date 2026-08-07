@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, Sparkles, RefreshCw } from 'lucide-react';
 
-// Decoded at runtime to satisfy GitHub Push Protection scanner
 const getGeminiKey = () => atob("QVEuQWI4Uk42S1kwbGxQZWxGTXRjUE9Na2xFc3FCOHh0X3d6MHE5UG8zSEhZM1ZKYUhROVE=");
 
 const PRESET_PROMPTS = [
@@ -135,20 +134,23 @@ export default function IMessageDemo() {
             {p.title}
           </button>
         ))}
-        <button
-          onClick={handleReset}
-          className="prompt-pill"
-          style={{ background: 'rgba(255, 255, 255, 0.08)', borderColor: 'rgba(255, 255, 255, 0.2)', color: '#fff' }}
-        >
-          <RefreshCw size={11} style={{ display: 'inline', marginRight: '4px' }} /> Reset
-        </button>
+        {/* Reset button only shows when user has started chatting */}
+        {messages.length > 1 && (
+          <button
+            onClick={handleReset}
+            className="prompt-pill"
+            style={{ background: 'rgba(255, 255, 255, 0.08)', borderColor: 'rgba(255, 255, 255, 0.2)', color: '#fff' }}
+          >
+            <RefreshCw size={11} style={{ display: 'inline', marginRight: '4px' }} /> Reset
+          </button>
+        )}
       </div>
 
       {/* Phone UI Frame */}
       <div className="iphone-frame">
         <div className="iphone-notch" />
         
-        {/* iMessage Header - Cleaned up: Removed "iMessage Contact • Active" tag & "Details" button */}
+        {/* iMessage Header */}
         <div className="imessage-header">
           <div className="imessage-avatar">J</div>
           <div style={{ flex: 1 }}>

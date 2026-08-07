@@ -1,69 +1,111 @@
 import React from 'react';
 import TiltCard from './TiltCard';
-import { MessageCircle, Users, Edit3, Calendar, Compass, Sparkles } from 'lucide-react';
+import { 
+  MessageSquare, 
+  Send, 
+  Package, 
+  Key, 
+  CheckSquare, 
+  TrendingUp, 
+  Mic, 
+  Camera, 
+  BellRing, 
+  Mail, 
+  Globe 
+} from 'lucide-react';
 
 const FEATURES_DATA = [
   {
-    icon: <MessageCircle size={18} color="#ffffff" />,
-    title: 'Native iMessage Integration',
-    desc: 'No third-party apps to install. Text Jorgius like a friend in standard blue bubbles.',
-    tag: 'Apple Ecosystem',
+    icon: <MessageSquare size={18} color="#ffffff" />,
+    title: 'iMessage and Telegram Chat',
+    desc: 'Talk to your assistant naturally on the messaging apps you use every day.',
+    tag: 'Multi-Platform',
   },
   {
-    icon: <Users size={18} color="#ffffff" />,
-    title: 'Group Chat Copilot',
-    desc: 'Add @Jorgius to any group chat to settle debates, plan events, and answer questions for everyone.',
-    tag: 'Multi-User',
+    icon: <Send size={18} color="#ffffff" />,
+    title: 'Smart Message Relay',
+    desc: 'Send texts to friends through Jorgius, matching your exact tone, slang, and energy.',
+    tag: 'Tone Matching',
   },
   {
-    icon: <Edit3 size={18} color="#ffffff" />,
-    title: 'Custom Assistant Name',
-    desc: 'Jorgius can be renamed — personalize your assistant to any name you prefer in your contacts.',
-    tag: 'Personalized',
+    icon: <Package size={18} color="#ffffff" />,
+    title: 'Package Watchdog',
+    desc: 'Snap a picture of a shipping label or text a tracking number to get instant delivery updates.',
+    tag: 'Live Tracking',
   },
   {
-    icon: <Calendar size={18} color="#ffffff" />,
-    title: 'Smart Calendar & Reminders',
-    desc: 'Set reminders and book meetings automatically synced to your Apple Calendar.',
-    tag: 'Automated Sync',
+    icon: <Key size={18} color="#ffffff" />,
+    title: 'Instant Verification Codes',
+    desc: 'Verification codes sent to your emails are forwarded to your text messages instantly.',
+    tag: '2FA Relay',
   },
   {
-    icon: <Compass size={18} color="#ffffff" />,
-    title: 'Live Web & Places Search',
-    desc: 'Real-time web lookups, restaurant recommendations, and active flight tracking.',
-    tag: 'Live Web Data',
+    icon: <CheckSquare size={18} color="#ffffff" />,
+    title: 'Isolated To-Do Lists',
+    desc: 'Keep your personal tasks organized and private, managed entirely over text.',
+    tag: 'Task Manager',
   },
   {
-    icon: <Sparkles size={18} color="#ffffff" />,
-    title: 'Constantly Expanding',
-    desc: 'More features, tools, and integrations are being added constantly every week.',
-    tag: 'Weekly Updates',
+    icon: <TrendingUp size={18} color="#ffffff" />,
+    title: 'Stock and Crypto Price Alerts',
+    desc: 'Get text alerts the moment your favorite stocks or crypto hit your target price.',
+    tag: 'Market Alerts',
+  },
+  {
+    icon: <Mic size={18} color="#ffffff" />,
+    title: 'Voice Message Processing',
+    desc: 'Send a voice note and Jorgius will transcribe it and execute your commands.',
+    tag: 'Voice AI',
+  },
+  {
+    icon: <Camera size={18} color="#ffffff" />,
+    title: 'Vision Photo Actions',
+    desc: 'Turn photos of flyers into calendar events and screenshots of bills into reminders.',
+    tag: 'Vision AI',
+  },
+  {
+    icon: <BellRing size={18} color="#ffffff" />,
+    title: 'Shared Reminders',
+    desc: 'Schedule automated reminders for yourself or send them directly to friends.',
+    tag: 'Automation',
+  },
+  {
+    icon: <Mail size={18} color="#ffffff" />,
+    title: 'Smart Email Summaries',
+    desc: 'Receive quick text summaries of your Gmail and Outlook inboxes with one admin toggle to pause alerts.',
+    tag: 'Inbox Digest',
+  },
+  {
+    icon: <Globe size={18} color="#ffffff" />,
+    title: 'Web Builder & Financial Reports',
+    desc: 'Create custom web pages and stock valuation PDFs published directly to your site.',
+    tag: 'PDF & Web',
   },
 ];
 
 export default function Features() {
   return (
-    <section id="features" style={{ padding: '30px 20px', maxWidth: '1200px', margin: '0 auto', position: 'relative', zIndex: 2 }}>
-      <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-        <h2 style={{ fontSize: 'clamp(1.4rem, 2.5vw, 2rem)', fontWeight: '800', fontFamily: 'var(--font-heading)', marginBottom: '6px' }}>
-          Engineered for <span className="text-shimmer">Power & Simplicity</span>
+    <section id="features" style={{ padding: '40px 20px', maxWidth: '1200px', margin: '0 auto', position: 'relative', zIndex: 2 }}>
+      <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+        <h2 style={{ fontSize: 'clamp(1.6rem, 2.8vw, 2.2rem)', fontWeight: '800', fontFamily: 'var(--font-heading)', marginBottom: '6px' }}>
+          Engineered for <span className="text-shimmer">Ultimate Utility</span>
         </h2>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', maxWidth: '500px', margin: '0 auto' }}>
-          Ground-up design built specifically for Apple's native messaging infrastructure.
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', maxWidth: '540px', margin: '0 auto' }}>
+          Powerful autonomous capabilities operating directly inside your text threads.
         </p>
       </div>
 
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
           gap: '16px',
         }}
       >
         {FEATURES_DATA.map((feat, i) => (
           <TiltCard key={i} maxTilt={5}>
-            <div style={{ padding: '18px 16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+            <div style={{ padding: '20px 18px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                 <div
                   style={{
                     width: '36px',
@@ -100,7 +142,7 @@ export default function Features() {
                   fontSize: '1rem',
                   fontWeight: '700',
                   color: '#f5f5f7',
-                  marginBottom: '4px',
+                  marginBottom: '6px',
                   fontFamily: 'var(--font-heading)',
                 }}
                 className="hover-glow-text"
@@ -108,7 +150,7 @@ export default function Features() {
                 {feat.title}
               </h3>
 
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', lineHeight: '1.4' }}>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', lineHeight: '1.45' }}>
                 {feat.desc}
               </p>
             </div>

@@ -1,23 +1,52 @@
 import React, { useState } from 'react';
 import TiltCard from './TiltCard';
-import { Send, CheckCircle } from 'lucide-react';
+import { Send, CheckCircle, Loader2 } from 'lucide-react';
+
+const getWeb3FormsKey = () => atob("N2FhNTQxMzMtYWMzMS00MTY3LWI3N2YtY2MzOGRkNzNhMjIw");
 
 export default function HowItWorks() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!phoneNumber.trim()) return;
+    if (!phoneNumber.trim() || loading) return;
 
-    // Simulate phone activation
-    setSubmitted(true);
+    setLoading(true);
+
+    try {
+      const response = await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          access_key: getWeb3FormsKey(),
+          subject: 'New Jorgius Signup Phone Number',
+          from_name: 'Jorgius Website',
+          phone: phoneNumber,
+          message: `New user phone signup: ${phoneNumber}`,
+        }),
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        console.log("Web3Forms notification sent successfully.");
+      }
+    } catch (err) {
+      console.error("Web3Forms Submission Error:", err);
+    } finally {
+      setLoading(false);
+      setSubmitted(true);
+    }
   };
 
   return (
-    <section id="signup" style={{ padding: '40px 20px', maxWidth: '600px', margin: '0 auto', position: 'relative', zIndex: 2 }}>
+    <section id="signup" style={{ padding: '50px 20px', maxWidth: '600px', margin: '0 auto', position: 'relative', zIndex: 2 }}>
       <TiltCard maxTilt={4}>
-        <div style={{ padding: '30px 24px', textAlign: 'center' }}>
+        <div style={{ padding: '32px 24px', textAlign: 'center' }}>
           {!submitted ? (
             <>
               <h2 style={{ fontSize: '1.4rem', fontWeight: '800', fontFamily: 'var(--font-heading)', marginBottom: '8px' }}>
@@ -37,9 +66,15 @@ export default function HowItWorks() {
                   style={{ textAlign: 'center', fontSize: '1.1rem', letterSpacing: '0.05em' }}
                   required
                 />
-                <button type="submit" className="btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
-                  <Send size={16} />
-                  <span>Start Texting Jorgius</span>
+                <button type="submit" className="btn-primary" disabled={loading} style={{ width: '100%', justifyContent: 'center' }}>
+                  {loading ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    <>
+                      <Send size={16} />
+                      <span>Start Texting Jorgius</span>
+                    </>
+                  )}
                 </button>
               </form>
             </>

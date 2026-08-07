@@ -20,23 +20,26 @@ export default function Navbar() {
         padding: '0 24px',
       }}
     >
-      {/* Brand Title (Plain text, no logo) */}
+      {/* Brand Title */}
       <div style={{ display: 'flex', alignItems: 'center' }}>
-        <span style={{ fontWeight: '800', fontSize: '1.2rem', fontFamily: 'var(--font-heading)', color: '#fff', letterSpacing: '-0.02em' }}>
+        <a href="#" style={{ fontWeight: '800', fontSize: '1.2rem', fontFamily: 'var(--font-heading)', color: '#fff', letterSpacing: '-0.02em', textDecoration: 'none' }}>
           Jorgius
-        </span>
+        </a>
       </div>
 
-      {/* Navigation Links (No GitHub Link) */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-        <a href="#demo" className="hover-glow-text" style={{ textDecoration: 'none', fontSize: '0.9rem', fontWeight: '500' }}>
+      {/* Navigation Links */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+        <a href="#demo" className="hover-glow-text" style={{ textDecoration: 'none', fontSize: '0.88rem', fontWeight: '500' }}>
           Live Demo
         </a>
-        <a href="#features" className="hover-glow-text" style={{ textDecoration: 'none', fontSize: '0.9rem', fontWeight: '500' }}>
+        <a href="#features" className="hover-glow-text" style={{ textDecoration: 'none', fontSize: '0.88rem', fontWeight: '500' }}>
           Features
         </a>
-        <a href="#pricing" className="hover-glow-text" style={{ textDecoration: 'none', fontSize: '0.9rem', fontWeight: '500' }}>
+        <a href="#pricing" className="hover-glow-text" style={{ textDecoration: 'none', fontSize: '0.88rem', fontWeight: '500' }}>
           Pricing
+        </a>
+        <a href="#signup" className="btn-primary" style={{ padding: '6px 16px', fontSize: '0.85rem' }}>
+          Get Started
         </a>
       </div>
     </nav>

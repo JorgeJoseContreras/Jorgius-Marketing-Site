@@ -1,18 +1,14 @@
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 
-export default function TiltCard({ children, className = '', maxTilt = 15 }) {
-  const cardRef = useRef(null);
+export default function TiltCard({ children, className = '', maxTilt = 8 }) {
   const [tiltStyle, setTiltStyle] = useState({
-    transform: 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)',
-    transition: 'transform 0.5s ease',
+    transform: 'rotateX(0deg) rotateY(0deg)',
   });
-  const [lightOverlay, setLightOverlay] = useState({
-    background: 'radial-gradient(circle at 50% 50%, rgba(255,255,255,0.15) 0%, transparent 60%)',
-  });
+  const [lightPos, setLightPos] = useState({ x: 50, y: 50, opacity: 0 });
 
   const handleMouseMove = (e) => {
-    if (!cardRef.current) return;
-    const rect = cardRef.current.getBoundingClientRect();
+    // Crucial: Use currentTarget so outer wrapper bounding rect stays static and fixed
+    const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
@@ -23,35 +19,55 @@ export default function TiltCard({ children, className = '', maxTilt = 15 }) {
     const rotateY = ((x - centerX) / centerX) * maxTilt;
 
     setTiltStyle({
-      transform: `perspective(1000px) rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg) scale3d(1.02, 1.02, 1.02)`,
-      transition: 'transform 0.1s ease-out',
+      transform: `perspective(1000px) rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg)`,
     });
 
-    const posXPercent = ((x / rect.width) * 100).toFixed(1);
-    const posYPercent = ((y / rect.height) * 100).toFixed(1);
-
-    setLightOverlay({
-      background: `radial-gradient(circle at ${posXPercent}% ${posYPercent}%, rgba(139, 92, 246, 0.22) 0%, rgba(6, 182, 212, 0.1) 40%, transparent 70%)`,
+    setLightPos({
+      x: ((x / rect.width) * 100).toFixed(1),
+      y: ((y / rect.height) * 100).toFixed(1),
+      opacity: 1,
     });
   };
 
   const handleMouseLeave = () => {
     setTiltStyle({
-      transform: 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)',
-      transition: 'transform 0.5s ease-out',
+      transform: 'perspective(1000px) rotateX(0deg) rotateY(0deg)',
     });
+    setLightPos((prev) => ({ ...prev, opacity: 0 }));
   };
 
   return (
-    <div className={`tilt-card-container ${className}`}>
+    <div
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      style={{
+        perspective: '1000px',
+        width: '100%',
+      }}
+      className={className}
+    >
       <div
-        ref={cardRef}
         className="tilt-card-inner"
-        style={tiltStyle}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
+        style={{
+          ...tiltStyle,
+          transition: 'transform 0.15s cubic-bezier(0.2, 0, 0.2, 1), border-color 0.3s ease, box-shadow 0.3s ease',
+          willChange: 'transform',
+          position: 'relative',
+          borderRadius: '16px',
+        }}
       >
-        <div className="tilt-light-overlay" style={lightOverlay} />
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            borderRadius: 'inherit',
+            pointerEvents: 'none',
+            opacity: lightPos.opacity,
+            background: `radial-gradient(circle at ${lightPos.x}% ${lightPos.y}%, rgba(139, 92, 246, 0.2) 0%, rgba(6, 182, 212, 0.08) 50%, transparent 80%)`,
+            transition: 'opacity 0.3s ease',
+            zIndex: 2,
+          }}
+        />
         <div style={{ position: 'relative', zIndex: 3 }}>
           {children}
         </div>

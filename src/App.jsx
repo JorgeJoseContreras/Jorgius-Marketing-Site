@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import BackgroundCanvas from './components/BackgroundCanvas';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
@@ -7,9 +7,42 @@ import Features from './components/Features';
 import HowItWorks from './components/HowItWorks';
 import Pricing from './components/Pricing';
 import Footer from './components/Footer';
+import StatusModal from './components/StatusModal';
+import AdminPanel from './components/AdminPanel';
 
 export default function App() {
   const [planMode, setPlanMode] = useState('demo');
+  const [isStatusOpen, setIsStatusOpen] = useState(false);
+  const [currentView, setCurrentView] = useState('main'); // 'main' | 'admin'
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash;
+      if (hash === '#admin') {
+        setCurrentView('admin');
+      } else if (hash === '#status') {
+        setIsStatusOpen(true);
+        setCurrentView('main');
+      } else {
+        setCurrentView('main');
+      }
+    };
+
+    handleHashChange();
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  if (currentView === 'admin') {
+    return (
+      <AdminPanel
+        onBack={() => {
+          window.location.hash = '';
+          setCurrentView('main');
+        }}
+      />
+    );
+  }
 
   return (
     <div style={{ position: 'relative', minHeight: '100vh', background: 'var(--bg-dark)' }}>
@@ -46,7 +79,24 @@ export default function App() {
       <Pricing onSelectPlan={setPlanMode} />
 
       {/* Footer */}
-      <Footer />
+      <Footer
+        onOpenStatus={() => setIsStatusOpen(true)}
+        onOpenAdmin={() => {
+          window.location.hash = '#admin';
+          setCurrentView('admin');
+        }}
+      />
+
+      {/* System Status Modal */}
+      <StatusModal
+        isOpen={isStatusOpen}
+        onClose={() => {
+          setIsStatusOpen(false);
+          if (window.location.hash === '#status') {
+            window.location.hash = '';
+          }
+        }}
+      />
     </div>
   );
 }

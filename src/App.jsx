@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import BackgroundCanvas from './components/BackgroundCanvas';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
@@ -9,6 +9,8 @@ import Pricing from './components/Pricing';
 import Footer from './components/Footer';
 
 export default function App() {
+  const [planMode, setPlanMode] = useState('demo');
+
   return (
     <div style={{ position: 'relative', minHeight: '100vh', background: 'var(--bg-dark)' }}>
       {/* Dynamic Animated Particle Canvas Background */}
@@ -37,11 +39,11 @@ export default function App() {
       {/* Features Grid */}
       <Features />
 
-      {/* One-Step Activation Signup Form */}
-      <HowItWorks />
+      {/* One-Step Activation Signup Form with Demo/Pro Switcher */}
+      <HowItWorks planMode={planMode} onPlanChange={setPlanMode} />
 
       {/* Access Pricing Plans */}
-      <Pricing />
+      <Pricing onSelectPlan={setPlanMode} />
 
       {/* Footer */}
       <Footer />

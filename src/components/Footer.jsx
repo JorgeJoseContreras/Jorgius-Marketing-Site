@@ -24,10 +24,14 @@ export default function Footer() {
         }}
       >
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
             <span style={{ fontWeight: '800', fontSize: '1.1rem', fontFamily: 'var(--font-heading)', color: '#fff' }}>
               Jorgius
             </span>
+            <div className="pulse-badge">
+              <span className="pulse-dot" />
+              <span>Jorgius v2.5 • Native Apple iMessage Assistant</span>
+            </div>
           </div>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', maxWidth: '350px' }}>
             AI assistant operating natively inside Apple iMessage. Designed for speed and absolute privacy.

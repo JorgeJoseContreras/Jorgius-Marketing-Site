@@ -2,7 +2,18 @@ import React from 'react';
 import TiltCard from './TiltCard';
 import { Check, Zap } from 'lucide-react';
 
-export default function Pricing() {
+export default function Pricing({ onSelectPlan }) {
+  const handlePlanClick = (e, plan) => {
+    e.preventDefault();
+    if (onSelectPlan) {
+      onSelectPlan(plan);
+    }
+    const signupEl = document.getElementById('signup');
+    if (signupEl) {
+      signupEl.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <section id="pricing" style={{ padding: '40px 20px', maxWidth: '800px', margin: '0 auto', position: 'relative', zIndex: 2 }}>
       <div style={{ textAlign: 'center', marginBottom: '24px' }}>
@@ -33,13 +44,17 @@ export default function Pricing() {
                 <Check size={14} color="#ffffff" /> Basic text & scheduling demo
               </li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: '#cbd5e1' }}>
-                <Check size={14} color="#ffffff" /> Standard response speed
+                <Check size={14} color="#ffffff" /> Upgrade anytime by asking Jorgius
               </li>
             </ul>
 
-            <a href="#signup" className="btn-secondary" style={{ width: '100%', padding: '8px 16px', textDecoration: 'none', textAlign: 'center' }}>
+            <button
+              onClick={(e) => handlePlanClick(e, 'demo')}
+              className="btn-secondary"
+              style={{ width: '100%', padding: '8px 16px', textDecoration: 'none', textAlign: 'center' }}
+            >
               Try Free Demo
-            </a>
+            </button>
           </div>
         </TiltCard>
 
@@ -79,10 +94,14 @@ export default function Pricing() {
               </li>
             </ul>
 
-            <a href="#signup" className="btn-primary" style={{ width: '100%', padding: '8px 16px', textDecoration: 'none', textAlign: 'center' }}>
+            <button
+              onClick={(e) => handlePlanClick(e, 'pro')}
+              className="btn-primary"
+              style={{ width: '100%', padding: '8px 16px', textDecoration: 'none', textAlign: 'center' }}
+            >
               <Zap size={12} fill="#000" />
               <span>Get Pro Access</span>
-            </a>
+            </button>
           </div>
         </TiltCard>
       </div>

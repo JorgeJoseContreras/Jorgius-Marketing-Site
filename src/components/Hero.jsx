@@ -1,17 +1,9 @@
 import React from 'react';
-import { Sparkles, MessageSquare, ArrowRight, ShieldCheck, Zap, Bot } from 'lucide-react';
+import { Sparkles, MessageSquare, ArrowRight } from 'lucide-react';
 
 export default function Hero() {
   return (
-    <section style={{ padding: '90px 20px 40px 20px', textAlign: 'center', position: 'relative', zIndex: 2 }}>
-      {/* Pulse Badge */}
-      <div style={{ marginBottom: '14px', display: 'inline-block' }}>
-        <div className="pulse-badge">
-          <span className="pulse-dot" />
-          <span>Jorgius v2.5 • Native Apple iMessage Assistant</span>
-        </div>
-      </div>
-
+    <section style={{ padding: '110px 20px 40px 20px', textAlign: 'center', position: 'relative', zIndex: 2 }}>
       {/* Main Title - Compact Typography */}
       <h1
         style={{
@@ -50,7 +42,7 @@ export default function Hero() {
           <ArrowRight size={14} />
         </a>
         <a href="#features" className="btn-secondary">
-          <Sparkles size={15} color="#06b6d4" />
+          <Sparkles size={15} color="#ffffff" />
           <span>Explore Capabilities</span>
         </a>
       </div>
@@ -66,17 +58,17 @@ export default function Hero() {
         }}
       >
         <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', padding: '12px 16px', borderRadius: '12px', backdropFilter: 'blur(10px)' }}>
-          <div style={{ fontSize: '1.3rem', fontWeight: '800', color: '#06b6d4', marginBottom: '2px' }}>&lt; 300ms</div>
+          <div style={{ fontSize: '1.3rem', fontWeight: '800', color: '#ffffff', marginBottom: '2px' }}>&lt; 300ms</div>
           <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>Sub-Second iMessage Latency</div>
         </div>
 
         <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', padding: '12px 16px', borderRadius: '12px', backdropFilter: 'blur(10px)' }}>
-          <div style={{ fontSize: '1.3rem', fontWeight: '800', color: '#8b5cf6', marginBottom: '2px' }}>Zero Apps</div>
+          <div style={{ fontSize: '1.3rem', fontWeight: '800', color: '#ffffff', marginBottom: '2px' }}>Zero Apps</div>
           <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>Native iOS & macOS iMessage</div>
         </div>
 
         <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', padding: '12px 16px', borderRadius: '12px', backdropFilter: 'blur(10px)' }}>
-          <div style={{ fontSize: '1.3rem', fontWeight: '800', color: '#ec4899', marginBottom: '2px' }}>E2E Private</div>
+          <div style={{ fontSize: '1.3rem', fontWeight: '800', color: '#ffffff', marginBottom: '2px' }}>E2E Private</div>
           <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>Encrypted & Secure Threads</div>
         </div>
       </div>

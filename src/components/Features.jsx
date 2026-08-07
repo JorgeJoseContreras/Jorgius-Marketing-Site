@@ -1,6 +1,6 @@
 import React from 'react';
 import TiltCard from './TiltCard';
-import { MessageCircle, Calendar, Compass, Shield } from 'lucide-react';
+import { MessageCircle, Users, Edit3, Calendar, Compass, Sparkles } from 'lucide-react';
 
 const FEATURES_DATA = [
   {
@@ -8,6 +8,18 @@ const FEATURES_DATA = [
     title: 'Native iMessage Integration',
     desc: 'No third-party apps to install. Text Jorgius like a friend in standard blue bubbles.',
     tag: 'Apple Ecosystem',
+  },
+  {
+    icon: <Users size={18} color="#ffffff" />,
+    title: 'Group Chat Copilot',
+    desc: 'Add @Jorgius to any group chat to settle debates, plan events, and answer questions for everyone.',
+    tag: 'Multi-User',
+  },
+  {
+    icon: <Edit3 size={18} color="#ffffff" />,
+    title: 'Custom Assistant Name',
+    desc: 'Jorgius can be renamed — personalize your assistant to any name you prefer in your contacts.',
+    tag: 'Personalized',
   },
   {
     icon: <Calendar size={18} color="#ffffff" />,
@@ -22,10 +34,10 @@ const FEATURES_DATA = [
     tag: 'Live Web Data',
   },
   {
-    icon: <Shield size={18} color="#ffffff" />,
-    title: 'Bank-Grade Privacy',
-    desc: 'Messages are processed securely. Your data is private and never sold or shared.',
-    tag: 'Private & Secure',
+    icon: <Sparkles size={18} color="#ffffff" />,
+    title: 'Constantly Expanding',
+    desc: 'More features, tools, and integrations are being added constantly every week.',
+    tag: 'Weekly Updates',
   },
 ];
 
@@ -34,7 +46,7 @@ export default function Features() {
     <section id="features" style={{ padding: '30px 20px', maxWidth: '1200px', margin: '0 auto', position: 'relative', zIndex: 2 }}>
       <div style={{ textAlign: 'center', marginBottom: '24px' }}>
         <h2 style={{ fontSize: 'clamp(1.4rem, 2.5vw, 2rem)', fontWeight: '800', fontFamily: 'var(--font-heading)', marginBottom: '6px' }}>
-          Engineered for <span className="text-shimmer">Simplicity & Speed</span>
+          Engineered for <span className="text-shimmer">Power & Simplicity</span>
         </h2>
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', maxWidth: '500px', margin: '0 auto' }}>
           Ground-up design built specifically for Apple's native messaging infrastructure.

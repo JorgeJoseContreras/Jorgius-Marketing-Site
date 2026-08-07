@@ -18,7 +18,6 @@ export default function Footer({ onOpenStatus }) {
     };
   }, []);
 
-  // Determine dot color based on current status code
   const getDotStyle = (statusCode) => {
     switch (statusCode) {
       case 'degraded':
@@ -28,7 +27,7 @@ export default function Footer({ onOpenStatus }) {
       case 'maintenance':
         return { background: '#3b82f6', boxShadow: '0 0 8px #3b82f6' };
       default:
-        return { background: '#22c55e', boxShadow: '0 0 8px #22c55e' }; // Green 100%
+        return { background: '#22c55e', boxShadow: '0 0 8px #22c55e' };
     }
   };
 
@@ -62,7 +61,6 @@ export default function Footer({ onOpenStatus }) {
               Jorgius
             </span>
 
-            {/* Version tag badge with status-colored glowing dot */}
             <button
               onClick={onOpenStatus}
               className="pulse-badge"
@@ -73,7 +71,7 @@ export default function Footer({ onOpenStatus }) {
             </button>
           </div>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', maxWidth: '350px' }}>
-            AI assistant operating natively inside Apple iMessage. Designed for speed and absolute privacy since 07/01/2026.
+            AI assistant operating natively inside Apple iMessage. Designed for speed and absolute privacy.
           </p>
         </div>
 

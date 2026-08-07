@@ -75,7 +75,7 @@ export default function Pricing({ onSelectPlan }) {
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.78rem', marginBottom: '14px' }}>Unlimited AI for power users.</p>
 
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '14px' }}>
-              <span style={{ fontSize: '2.2rem', fontWeight: '800', color: '#fff', fontFamily: 'var(--font-heading)' }}>$9.99</span>
+              <span style={{ fontSize: '2.2rem', fontWeight: '800', color: '#fff', fontFamily: 'var(--font-heading)' }}>$4.99</span>
               <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>/ month</span>
             </div>
 

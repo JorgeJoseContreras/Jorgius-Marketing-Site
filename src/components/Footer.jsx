@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getSystemStatus } from '../utils/statusStore';
 
-export default function Footer({ onOpenStatus }) {
+export default function Footer({ onOpenStatus, isLoggedIn, onAuthClick, onDashboardClick }) {
   const [statusData, setStatusData] = useState(getSystemStatus());
 
   useEffect(() => {
@@ -92,6 +92,35 @@ export default function Footer({ onOpenStatus }) {
           >
             System Status
           </button>
+          {isLoggedIn ? (
+            <button
+              onClick={onDashboardClick}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--text-secondary)',
+                cursor: 'pointer',
+                fontSize: '0.85rem',
+                padding: 0,
+              }}
+            >
+              Dashboard
+            </button>
+          ) : (
+            <button
+              onClick={onAuthClick}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--text-secondary)',
+                cursor: 'pointer',
+                fontSize: '0.85rem',
+                padding: 0,
+              }}
+            >
+              Log In / Sign Up
+            </button>
+          )}
         </div>
       </div>
 

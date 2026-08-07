@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function Navbar() {
+export default function Navbar({ isLoggedIn, onAuthClick, onDashboardClick }) {
   return (
     <nav
       style={{
@@ -38,9 +38,23 @@ export default function Navbar() {
         <a href="#pricing" className="hover-glow-text" style={{ textDecoration: 'none', fontSize: '0.88rem', fontWeight: '500' }}>
           Pricing
         </a>
-        <a href="#signup" className="btn-primary" style={{ padding: '6px 16px', fontSize: '0.85rem' }}>
-          Get Started
-        </a>
+        {isLoggedIn ? (
+          <button
+            onClick={onDashboardClick}
+            className="btn-primary"
+            style={{ padding: '6px 16px', fontSize: '0.85rem', cursor: 'pointer' }}
+          >
+            Dashboard
+          </button>
+        ) : (
+          <button
+            onClick={onAuthClick}
+            className="btn-primary"
+            style={{ padding: '6px 16px', fontSize: '0.85rem', cursor: 'pointer' }}
+          >
+            Log In / Sign Up
+          </button>
+        )}
       </div>
     </nav>
   );

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { supabase } from './utils/supabaseClient';
 import BackgroundCanvas from './components/BackgroundCanvas';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
@@ -9,17 +10,52 @@ import Pricing from './components/Pricing';
 import Footer from './components/Footer';
 import StatusModal from './components/StatusModal';
 import AdminPanel from './components/AdminPanel';
+import Auth from './components/Auth';
+import Dashboard from './components/Dashboard';
 
 export default function App() {
   const [planMode, setPlanMode] = useState('demo');
   const [isStatusOpen, setIsStatusOpen] = useState(false);
-  const [currentView, setCurrentView] = useState('main'); // 'main' | 'admin'
+  
+  // App views: 'main' | 'admin' | 'auth' | 'dashboard'
+  const [currentView, setCurrentView] = useState('main'); 
+  const [user, setUser] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    // Check initial active session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setIsLoggedIn(!!session?.user);
+    });
+
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      setIsLoggedIn(!!session?.user);
+      if (session?.user) {
+        if (window.location.hash === '#auth') {
+          window.location.hash = '#dashboard';
+        }
+      } else {
+        if (window.location.hash === '#dashboard') {
+          window.location.hash = '';
+        }
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash;
       if (hash === '#admin') {
         setCurrentView('admin');
+      } else if (hash === '#auth') {
+        setCurrentView('auth');
+      } else if (hash === '#dashboard') {
+        setCurrentView(isLoggedIn ? 'dashboard' : 'auth');
       } else if (hash === '#status') {
         setIsStatusOpen(true);
         setCurrentView('main');
@@ -31,15 +67,47 @@ export default function App() {
     handleHashChange();
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
-  }, []);
+  }, [isLoggedIn]);
 
+  const handleAuthSuccess = (authUser) => {
+    setUser(authUser);
+    setIsLoggedIn(true);
+    window.location.hash = '#dashboard';
+  };
+
+  const handleSignOut = () => {
+    setUser(null);
+    setIsLoggedIn(false);
+    window.location.hash = '';
+  };
+
+  // Render view components
   if (currentView === 'admin') {
     return (
       <AdminPanel
         onBack={() => {
           window.location.hash = '';
-          setCurrentView('main');
         }}
+      />
+    );
+  }
+
+  if (currentView === 'auth') {
+    return (
+      <Auth
+        onBack={() => {
+          window.location.hash = '';
+        }}
+        onAuthSuccess={handleAuthSuccess}
+      />
+    );
+  }
+
+  if (currentView === 'dashboard') {
+    return (
+      <Dashboard
+        user={user}
+        onSignOut={handleSignOut}
       />
     );
   }
@@ -50,7 +118,15 @@ export default function App() {
       <BackgroundCanvas />
 
       {/* Navigation */}
-      <Navbar />
+      <Navbar
+        isLoggedIn={isLoggedIn}
+        onAuthClick={() => {
+          window.location.hash = '#auth';
+        }}
+        onDashboardClick={() => {
+          window.location.hash = '#dashboard';
+        }}
+      />
 
       {/* Hero Section */}
       <Hero />
@@ -81,10 +157,17 @@ export default function App() {
       {/* Footer */}
       <Footer
         onOpenStatus={() => setIsStatusOpen(true)}
+        isLoggedIn={isLoggedIn}
+        onAuthClick={() => {
+          window.location.hash = '#auth';
+        }}
+        onDashboardClick={() => {
+          window.location.hash = '#dashboard';
+        }}
       />
 
       {/* System Status Modal */}
-      <StatusModal
+      <SystemStatusModal
         isOpen={isStatusOpen}
         onClose={() => {
           setIsStatusOpen(false);
@@ -95,4 +178,9 @@ export default function App() {
       />
     </div>
   );
+}
+
+// Simple fallback naming map to match original component name exports
+function SystemStatusModal(props) {
+  return <StatusModal {...props} />;
 }

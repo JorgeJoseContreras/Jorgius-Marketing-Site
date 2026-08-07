@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getSystemStatus } from '../utils/statusStore';
 
-export default function Footer({ onOpenStatus, onOpenAdmin }) {
+export default function Footer({ onOpenStatus }) {
   const [statusData, setStatusData] = useState(getSystemStatus());
 
   useEffect(() => {
@@ -78,23 +78,6 @@ export default function Footer({ onOpenStatus, onOpenAdmin }) {
           >
             System Status
           </button>
-          <a
-            href="#admin"
-            onClick={(e) => {
-              e.preventDefault();
-              if (onOpenAdmin) onOpenAdmin();
-            }}
-            style={{
-              color: 'var(--text-muted)',
-              textDecoration: 'none',
-              fontSize: '0.78rem',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              padding: '4px 8px',
-              borderRadius: '4px',
-            }}
-          >
-            Admin Portal
-          </a>
         </div>
       </div>
 

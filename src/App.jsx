@@ -81,10 +81,6 @@ export default function App() {
       {/* Footer */}
       <Footer
         onOpenStatus={() => setIsStatusOpen(true)}
-        onOpenAdmin={() => {
-          window.location.hash = '#admin';
-          setCurrentView('admin');
-        }}
       />
 
       {/* System Status Modal */}

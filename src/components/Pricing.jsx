@@ -1,107 +1,88 @@
 import React from 'react';
 import TiltCard from './TiltCard';
-import { Check, Sparkles, Zap } from 'lucide-react';
+import { Check, Zap } from 'lucide-react';
 
 export default function Pricing() {
   return (
-    <section id="pricing" style={{ padding: '40px 20px', maxWidth: '900px', margin: '0 auto', position: 'relative', zIndex: 2 }}>
-      <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-        <h2 style={{ fontSize: 'clamp(1.5rem, 3vw, 2.2rem)', fontWeight: '800', fontFamily: 'var(--font-heading)', marginBottom: '8px' }}>
-          Simple, Transparent <span className="text-shimmer">Pricing</span>
+    <section id="pricing" style={{ padding: '40px 20px', maxWidth: '800px', margin: '0 auto', position: 'relative', zIndex: 2 }}>
+      <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+        <h2 style={{ fontSize: 'clamp(1.4rem, 2.5vw, 2rem)', fontWeight: '800', fontFamily: 'var(--font-heading)', marginBottom: '6px' }}>
+          Access Plans
         </h2>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.92rem' }}>
-          Start free forever. Upgrade anytime for unlimited queries.
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem' }}>
+          Test with a free demo, or unlock unlimited iMessage access.
         </p>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '20px' }}>
-        {/* Free Plan */}
-        <TiltCard maxTilt={5}>
-          <div style={{ padding: '24px 20px' }}>
-            <h3 style={{ fontSize: '1.15rem', fontWeight: '700', color: '#fff', marginBottom: '4px' }}>Free Starter</h3>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginBottom: '16px' }}>Perfect for daily casual queries.</p>
+        {/* Free Demo Plan */}
+        <TiltCard maxTilt={4}>
+          <div style={{ padding: '20px 18px' }}>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: '#fff', marginBottom: '4px' }}>Demo Access</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.78rem', marginBottom: '14px' }}>Try the core iMessage flow instantly.</p>
 
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '16px' }}>
-              <span style={{ fontSize: '2.2rem', fontWeight: '800', color: '#fff', fontFamily: 'var(--font-heading)' }}>$0</span>
-              <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>/ month</span>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '14px' }}>
+              <span style={{ fontSize: '2rem', fontWeight: '800', color: '#fff', fontFamily: 'var(--font-heading)' }}>Free</span>
             </div>
 
-            <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 20px 0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', color: '#cbd5e1' }}>
-                <Check size={14} color="#06b6d4" /> 50 AI iMessages per month
+            <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 16px 0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <li style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: '#cbd5e1' }}>
+                <Check size={14} color="#ffffff" /> Capped at 10 messages total
               </li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', color: '#cbd5e1' }}>
-                <Check size={14} color="#06b6d4" /> Basic text & scheduling
+              <li style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: '#cbd5e1' }}>
+                <Check size={14} color="#ffffff" /> Basic text & scheduling demo
               </li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', color: '#cbd5e1' }}>
-                <Check size={14} color="#06b6d4" /> Standard response speed
+              <li style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: '#cbd5e1' }}>
+                <Check size={14} color="#ffffff" /> Standard response speed
               </li>
             </ul>
 
-            <button className="btn-secondary" style={{ width: '100%', padding: '8px 16px' }}>
-              Get Started Free
-            </button>
+            <a href="#signup" className="btn-secondary" style={{ width: '100%', padding: '8px 16px', textDecoration: 'none', textAlign: 'center' }}>
+              Try Free Demo
+            </a>
           </div>
         </TiltCard>
 
         {/* Pro Plan */}
-        <TiltCard maxTilt={6}>
+        <TiltCard maxTilt={5}>
           <div
             style={{
-              padding: '24px 20px',
+              padding: '20px 18px',
               position: 'relative',
-              background: 'linear-gradient(180deg, rgba(139,92,246,0.15) 0%, rgba(18,22,34,0.85) 100%)',
-              border: '1px solid rgba(139, 92, 246, 0.5)',
+              background: 'rgba(255, 255, 255, 0.03)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
               borderRadius: '16px',
             }}
           >
-            <div
-              style={{
-                position: 'absolute',
-                top: '-10px',
-                right: '16px',
-                background: 'linear-gradient(135deg, #8b5cf6, #06b6d4)',
-                padding: '2px 10px',
-                borderRadius: '9999px',
-                fontSize: '0.65rem',
-                fontWeight: '800',
-                color: '#fff',
-                textTransform: 'uppercase',
-                letterSpacing: '0.04em',
-              }}
-            >
-              Popular
-            </div>
-
-            <h3 style={{ fontSize: '1.15rem', fontWeight: '700', color: '#fff', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              Jorgius Pro <Sparkles size={14} color="#06b6d4" />
+            <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: '#fff', marginBottom: '4px' }}>
+              Jorgius Pro
             </h3>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginBottom: '16px' }}>Unlimited power users.</p>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.78rem', marginBottom: '14px' }}>Unlimited AI for power users.</p>
 
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '14px' }}>
               <span style={{ fontSize: '2.2rem', fontWeight: '800', color: '#fff', fontFamily: 'var(--font-heading)' }}>$9.99</span>
-              <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>/ month</span>
+              <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>/ month</span>
             </div>
 
-            <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 20px 0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', color: '#fff' }}>
-                <Check size={14} color="#8b5cf6" /> <strong>Unlimited</strong> iMessages & @mentions
+            <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 16px 0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <li style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: '#fff' }}>
+                <Check size={14} color="#ffffff" /> <strong>Unlimited</strong> messages & requests
               </li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', color: '#fff' }}>
-                <Check size={14} color="#8b5cf6" /> Sub-300ms ultra-fast priority
+              <li style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: '#fff' }}>
+                <Check size={14} color="#ffffff" /> Sub-300ms priority response
               </li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', color: '#fff' }}>
-                <Check size={14} color="#8b5cf6" /> Multimodal vision & AI image renders
+              <li style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: '#fff' }}>
+                <Check size={14} color="#ffffff" /> Full live web search capabilities
               </li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', color: '#fff' }}>
-                <Check size={14} color="#8b5cf6" /> Live web browsing & calendar sync
+              <li style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: '#fff' }}>
+                <Check size={14} color="#ffffff" /> Full calendar integration
               </li>
             </ul>
 
-            <button className="btn-primary" style={{ width: '100%', padding: '8px 16px' }}>
-              <Zap size={14} />
-              <span>Upgrade to Pro</span>
-            </button>
+            <a href="#signup" className="btn-primary" style={{ width: '100%', padding: '8px 16px', textDecoration: 'none', textAlign: 'center' }}>
+              <Zap size={12} fill="#000" />
+              <span>Get Pro Access</span>
+            </a>
           </div>
         </TiltCard>
       </div>

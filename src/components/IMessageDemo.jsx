@@ -1,30 +1,30 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Sparkles, CheckCheck, RefreshCw, Zap } from 'lucide-react';
+import { Send, Sparkles, CheckCheck, RefreshCw } from 'lucide-react';
 
 const PRESET_PROMPTS = [
   {
     id: 1,
     title: '📅 Smart Scheduling',
     userMsg: 'Set up a quick sync with Alex for tomorrow at 3 PM and add it to my calendar',
-    aiReply: 'Done! Created calendar event "Quick Sync with Alex" for tomorrow, Aug 7 at 3:00 PM. I\'ve also sent Alex an iMessage invite link.',
+    aiReply: 'Done! Created calendar event "Quick Sync with Alex" for tomorrow at 3:00 PM. I\'ve sent you a confirmation.',
   },
   {
     id: 2,
-    title: '📝 Summarize Group Chat',
-    userMsg: 'Summarize the last 20 messages from the Product Team group chat',
-    aiReply: 'Key updates from Product Team:\n1. Beta v2.4 launch moved to Thursday.\n2. Design approved the new 3D card layout.\n3. Marcus is handling API key setup.',
+    title: '🔍 Instant Web Search',
+    userMsg: 'Find top-rated sushi spots near downtown open right now',
+    aiReply: 'Found 2 top spots open now:\n📍 Omakase Club (4.9★) - 0.4 mi away\n📍 Sakura Bistro (4.7★) - 0.8 mi away\nWould you like me to book a table?',
   },
   {
     id: 3,
-    title: '🔍 Instant Web Search',
-    userMsg: 'Find top-rated sushi spots near downtown open right now with outdoor seating',
-    aiReply: 'Found 2 top spots open now:\n📍 Omakase Club (4.9★) - 0.4 mi away (Patio open)\n📍 Sakura Bistro (4.7★) - 0.8 mi away\nWant me to reserve a table?',
+    title: '🔔 Set Reminder',
+    userMsg: 'Remind me to call Mom when I get home',
+    aiReply: 'Set! I\'ll send you an iMessage reminder to call Mom as soon as your location updates to home.',
   },
   {
     id: 4,
-    title: '🎨 AI Image Generation',
-    userMsg: 'Generate a futuristic cyberpunk poster logo concept for a space event',
-    aiReply: '✨ Generated high-res concept artwork directly for your iMessage preview! Tap to expand or send to your design channel.',
+    title: '💡 General Q&A',
+    userMsg: 'Explain quantum computing in one simple sentence',
+    aiReply: 'Quantum computing is a type of computing that uses quantum mechanics to solve complex problems much faster than regular computers.',
   },
 ];
 
@@ -32,16 +32,18 @@ export default function IMessageDemo() {
   const [messages, setMessages] = useState([
     {
       sender: 'ai',
-      text: 'Hey Jorge! 👋 I’m Jorgius, your personal AI assistant. You can text me anytime in iMessage or add me to group chats. What can I help you with today?',
+      text: 'Hey Jorge! 👋 I’m Jorgius, your personal AI assistant. You can text me right here on iMessage. How can I help you today?',
       time: '10:42 AM',
     },
   ]);
   const [isTyping, setIsTyping] = useState(false);
   const [inputVal, setInputVal] = useState('');
-  const chatBottomRef = useRef(null);
+  const chatBodyRef = useRef(null);
 
   const scrollToBottom = () => {
-    chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (chatBodyRef.current) {
+      chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
+    }
   };
 
   useEffect(() => {
@@ -51,7 +53,6 @@ export default function IMessageDemo() {
   const handlePromptClick = (prompt) => {
     if (isTyping) return;
 
-    // Append user message
     const userMessage = {
       sender: 'user',
       text: prompt.userMsg,
@@ -61,7 +62,6 @@ export default function IMessageDemo() {
     setMessages((prev) => [...prev, userMessage]);
     setIsTyping(true);
 
-    // Simulate AI thinking and typing response
     setTimeout(() => {
       setIsTyping(false);
       setMessages((prev) => [
@@ -72,7 +72,7 @@ export default function IMessageDemo() {
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         },
       ]);
-    }, 1400);
+    }, 1200);
   };
 
   const handleCustomSend = (e) => {
@@ -99,27 +99,27 @@ export default function IMessageDemo() {
         ...prev,
         {
           sender: 'ai',
-          text: `I'm on it! Operating right inside iMessage to handle "${userText}".`,
+          text: `I'm on it! Handling "${userText}" directly in your thread.`,
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         },
       ]);
-    }, 1200);
+    }, 1000);
   };
 
   const handleReset = () => {
     setMessages([
       {
         sender: 'ai',
-        text: 'Hey Jorge! 👋 I’m Jorgius, your personal AI assistant. You can text me anytime in iMessage or add me to group chats. What can I help you with today?',
+        text: 'Hey Jorge! 👋 I’m Jorgius, your personal AI assistant. You can text me right here on iMessage. How can I help you today?',
         time: '10:42 AM',
       },
     ]);
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', width: '100%' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', width: '100%' }}>
       {/* Interactive Prompt Pills */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'center', maxWidth: '600px' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center', maxWidth: '500px' }}>
         {PRESET_PROMPTS.map((p) => (
           <button key={p.id} onClick={() => handlePromptClick(p)} className="prompt-pill">
             {p.title}
@@ -128,9 +128,9 @@ export default function IMessageDemo() {
         <button
           onClick={handleReset}
           className="prompt-pill"
-          style={{ background: 'rgba(239, 68, 68, 0.15)', borderColor: 'rgba(239, 68, 68, 0.3)', color: '#fca5a5' }}
+          style={{ background: 'rgba(255, 255, 255, 0.08)', borderColor: 'rgba(255, 255, 255, 0.2)', color: '#fff' }}
         >
-          <RefreshCw size={12} style={{ display: 'inline', marginRight: '4px' }} /> Reset Demo
+          <RefreshCw size={11} style={{ display: 'inline', marginRight: '4px' }} /> Reset
         </button>
       </div>
 
@@ -142,30 +142,30 @@ export default function IMessageDemo() {
         <div className="imessage-header">
           <div className="imessage-avatar">J</div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: '700', fontSize: '0.95rem', color: '#fff', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              Jorgius AI <Sparkles size={14} color="#06b6d4" />
+            <div style={{ fontWeight: '700', fontSize: '0.9rem', color: '#fff', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              Jorgius <Sparkles size={12} color="#ffffff" />
             </div>
-            <div style={{ fontSize: '0.75rem', color: '#34d399', display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#34d399', display: 'inline-block' }} />
+            <div style={{ fontSize: '0.72rem', color: '#8e8e93', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#8e8e93', display: 'inline-block' }} />
               iMessage Contact • Active
             </div>
           </div>
-          <div style={{ color: '#007aff', fontSize: '0.85rem', fontWeight: '600' }}>
+          <div style={{ color: '#007aff', fontSize: '0.82rem', fontWeight: '600' }}>
             Details
           </div>
         </div>
 
         {/* Message Feed */}
-        <div className="imessage-body">
-          <div style={{ textAlign: 'center', fontSize: '0.7rem', color: '#64748b', margin: '8px 0' }}>
-            iMessage with Jorgius AI
+        <div className="imessage-body" ref={chatBodyRef}>
+          <div style={{ textAlign: 'center', fontSize: '0.68rem', color: '#48484a', margin: '4px 0' }}>
+            iMessage with Jorgius
           </div>
 
           {messages.map((m, idx) => (
             <div key={idx} className={`bubble ${m.sender === 'user' ? 'bubble-user' : 'bubble-ai'}`}>
               <div style={{ whiteSpace: 'pre-line' }}>{m.text}</div>
-              <div style={{ fontSize: '0.65rem', opacity: 0.7, textAlign: 'right', marginTop: '4px' }}>
-                {m.time} {m.sender === 'user' && <CheckCheck size={12} style={{ display: 'inline', marginLeft: '2px' }} />}
+              <div style={{ fontSize: '0.6rem', opacity: 0.6, textAlign: 'right', marginTop: '2px' }}>
+                {m.time} {m.sender === 'user' && <CheckCheck size={10} style={{ display: 'inline', marginLeft: '2px' }} />}
               </div>
             </div>
           ))}
@@ -179,20 +179,18 @@ export default function IMessageDemo() {
               </div>
             </div>
           )}
-
-          <div ref={chatBottomRef} />
         </div>
 
         {/* Input Bar */}
         <form
           onSubmit={handleCustomSend}
           style={{
-            padding: '10px 14px 20px 14px',
+            padding: '8px 12px 16px 12px',
             background: '#16161a',
             borderTop: '1px solid rgba(255,255,255,0.08)',
             display: 'flex',
             alignItems: 'center',
-            gap: '8px',
+            gap: '6px',
           }}
         >
           <input
@@ -205,28 +203,28 @@ export default function IMessageDemo() {
               background: '#26262a',
               border: '1px solid rgba(255,255,255,0.1)',
               borderRadius: '20px',
-              padding: '10px 16px',
+              padding: '8px 14px',
               color: '#fff',
-              fontSize: '0.9rem',
+              fontSize: '0.85rem',
               outline: 'none',
             }}
           />
           <button
             type="submit"
             style={{
-              width: '36px',
-              height: '36px',
+              width: '32px',
+              height: '32px',
               borderRadius: '50%',
-              background: '#007aff',
+              background: '#ffffff',
               border: 'none',
-              color: '#fff',
+              color: '#000000',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
             }}
           >
-            <Send size={16} />
+            <Send size={14} color="#000" />
           </button>
         </form>
       </div>

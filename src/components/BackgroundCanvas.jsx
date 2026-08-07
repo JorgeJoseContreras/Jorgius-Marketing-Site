@@ -23,7 +23,7 @@ export default function BackgroundCanvas() {
       y: height / 2,
       targetX: width / 2,
       targetY: height / 2,
-      radius: 180,
+      radius: 150,
     };
 
     const handleMouseMove = (e) => {
@@ -32,44 +32,41 @@ export default function BackgroundCanvas() {
     };
     window.addEventListener('mousemove', handleMouseMove);
 
-    // Particle system creation
-    const particleCount = Math.min(Math.floor((width * height) / 12000), 90);
+    // Particle system creation - compact and performant
+    const particleCount = Math.min(Math.floor((width * height) / 15000), 70);
     const particles = [];
 
     const colors = [
-      'rgba(139, 92, 246, ',  // Purple
-      'rgba(6, 182, 212, ',   // Cyan
-      'rgba(56, 189, 248, ',  // Light blue
-      'rgba(236, 72, 153, '   // Pink
+      'rgba(255, 255, 255, ',  // White
+      'rgba(180, 180, 180, ',  // Light Grey
+      'rgba(120, 120, 120, '   // Dark Grey
     ];
 
     for (let i = 0; i < particleCount; i++) {
       particles.push({
         x: Math.random() * width,
         y: Math.random() * height,
-        vx: (Math.random() - 0.5) * 0.8,
-        vy: (Math.random() - 0.5) * 0.8,
-        size: Math.random() * 2.5 + 1,
+        vx: (Math.random() - 0.5) * 0.5,
+        vy: (Math.random() - 0.5) * 0.5,
+        size: Math.random() * 2 + 1,
         colorPrefix: colors[Math.floor(Math.random() * colors.length)],
-        alpha: Math.random() * 0.6 + 0.2,
+        alpha: Math.random() * 0.4 + 0.1,
       });
     }
 
     const render = () => {
-      // Smooth mouse easing
       mouse.x += (mouse.targetX - mouse.x) * 0.08;
       mouse.y += (mouse.targetY - mouse.y) * 0.08;
 
       ctx.clearRect(0, 0, width, height);
 
-      // Subtle ambient glowing aura behind cursor
+      // Monotone glowing aura behind cursor
       const radialGlow = ctx.createRadialGradient(
         mouse.x, mouse.y, 0,
-        mouse.x, mouse.y, 350
+        mouse.x, mouse.y, 250
       );
-      radialGlow.addColorStop(0, 'rgba(139, 92, 246, 0.12)');
-      radialGlow.addColorStop(0.5, 'rgba(6, 182, 212, 0.06)');
-      radialGlow.addColorStop(1, 'rgba(7, 8, 12, 0)');
+      radialGlow.addColorStop(0, 'rgba(255, 255, 255, 0.05)');
+      radialGlow.addColorStop(1, 'rgba(7, 8, 10, 0)');
       ctx.fillStyle = radialGlow;
       ctx.fillRect(0, 0, width, height);
 
@@ -83,37 +80,37 @@ export default function BackgroundCanvas() {
         if (p.x < 0 || p.x > width) p.vx *= -1;
         if (p.y < 0 || p.y > height) p.vy *= -1;
 
-        // Mouse attraction/repulsion physics
+        // Mouse interaction
         const dx = mouse.x - p.x;
         const dy = mouse.y - p.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
 
         if (dist < mouse.radius) {
           const force = (mouse.radius - dist) / mouse.radius;
-          p.x -= (dx / dist) * force * 2;
-          p.y -= (dy / dist) * force * 2;
+          p.x -= (dx / dist) * force * 1.5;
+          p.y -= (dy / dist) * force * 1.5;
         }
 
-        // Draw particle node
+        // Draw particle
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
         ctx.fillStyle = p.colorPrefix + p.alpha + ')';
         ctx.fill();
 
-        // Connect nearby particles with glowing lines
+        // Connect nearby particles
         for (let j = i + 1; j < particles.length; j++) {
           const p2 = particles[j];
           const pdx = p.x - p2.x;
           const pdy = p.y - p2.y;
           const pDist = Math.sqrt(pdx * pdx + pdy * pdy);
 
-          if (pDist < 120) {
-            const lineAlpha = (1 - pDist / 120) * 0.25;
+          if (pDist < 100) {
+            const lineAlpha = (1 - pDist / 100) * 0.15;
             ctx.beginPath();
             ctx.moveTo(p.x, p.y);
             ctx.lineTo(p2.x, p2.y);
-            ctx.strokeStyle = `rgba(139, 92, 246, ${lineAlpha})`;
-            ctx.lineWidth = 0.8;
+            ctx.strokeStyle = `rgba(255, 255, 255, ${lineAlpha})`;
+            ctx.lineWidth = 0.6;
             ctx.stroke();
           }
         }

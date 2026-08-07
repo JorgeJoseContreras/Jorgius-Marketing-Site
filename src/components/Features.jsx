@@ -18,9 +18,9 @@ import {
 const FEATURES_DATA = [
   {
     icon: <MessageSquare size={18} color="#ffffff" />,
-    title: 'iMessage and Telegram Chat',
-    desc: 'Talk to your assistant naturally on the messaging apps you use every day.',
-    tag: 'Multi-Platform',
+    title: 'iMessage Chat',
+    desc: 'Talk to your assistant naturally right inside your native iMessage app.',
+    tag: 'Native Chat',
   },
   {
     icon: <Edit3 size={18} color="#ffffff" />,
@@ -110,54 +110,56 @@ export default function Features() {
         }}
       >
         {FEATURES_DATA.map((feat, i) => (
-          <TiltCard key={i} maxTilt={5}>
-            <div style={{ padding: '20px 18px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                <div
-                  style={{
-                    width: '36px',
-                    height: '36px',
-                    borderRadius: '8px',
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  {feat.icon}
+          <TiltCard key={i} maxTilt={5} className="features-grid-card">
+            <div style={{ padding: '20px 18px', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <div
+                    style={{
+                      width: '36px',
+                      height: '36px',
+                      borderRadius: '8px',
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    {feat.icon}
+                  </div>
+                  <span
+                    style={{
+                      fontSize: '0.65rem',
+                      fontWeight: '700',
+                      color: '#86868b',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.04em',
+                      padding: '2px 8px',
+                      borderRadius: '9999px',
+                      background: 'rgba(255, 255, 255, 0.04)',
+                      border: '1px solid rgba(255, 255, 255, 0.08)',
+                    }}
+                  >
+                    {feat.tag}
+                  </span>
                 </div>
-                <span
+
+                <h3
                   style={{
-                    fontSize: '0.65rem',
+                    fontSize: '1.02rem',
                     fontWeight: '700',
-                    color: '#86868b',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.04em',
-                    padding: '2px 8px',
-                    borderRadius: '9999px',
-                    background: 'rgba(255, 255, 255, 0.04)',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    color: '#f5f5f7',
+                    marginBottom: '6px',
+                    fontFamily: 'var(--font-heading)',
                   }}
+                  className="hover-glow-text"
                 >
-                  {feat.tag}
-                </span>
+                  {feat.title}
+                </h3>
               </div>
 
-              <h3
-                style={{
-                  fontSize: '1rem',
-                  fontWeight: '700',
-                  color: '#f5f5f7',
-                  marginBottom: '6px',
-                  fontFamily: 'var(--font-heading)',
-                }}
-                className="hover-glow-text"
-              >
-                {feat.title}
-              </h3>
-
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', lineHeight: '1.45' }}>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', lineHeight: '1.45', marginTop: '4px' }}>
                 {feat.desc}
               </p>
             </div>

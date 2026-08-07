@@ -112,6 +112,16 @@ html, body {
   box-shadow: 0 12px 30px rgba(255, 255, 255, 0.05);
 }
 
+/* Force equal card heights in grid */
+.features-grid-card {
+  height: 100%;
+}
+
+.features-grid-card .tilt-card-inner {
+  height: 100%;
+  min-height: 195px; /* Ensures matching height alignment */
+}
+
 /* Status Badge - Monotone */
 .pulse-badge {
   display: inline-flex;

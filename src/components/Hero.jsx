@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles, MessageSquare, ArrowRight } from 'lucide-react';
+import { Sparkles, MessageSquare } from 'lucide-react';
 
 export default function Hero() {
   return (
@@ -20,7 +20,7 @@ export default function Hero() {
         <span className="text-shimmer">Autonomous Intelligence</span>
       </h1>
 
-      {/* Subtitle - Exact comma formatting as requested */}
+      {/* Subtitle */}
       <p
         style={{
           fontSize: '0.98rem',
@@ -34,12 +34,11 @@ export default function Hero() {
         Meet <strong style={{ color: '#fff' }}>Jorgius</strong>, the personal AI companion living right inside your native iMessage app. Zero downloads. Just text, command, and automate.
       </p>
 
-      {/* CTA Buttons */}
+      {/* CTA Buttons - Arrow removed from Try Interactive Demo */}
       <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '36px' }}>
         <a href="#demo" className="btn-primary">
           <MessageSquare size={16} />
           <span>Try Interactive Demo</span>
-          <ArrowRight size={14} />
         </a>
         <a href="#features" className="btn-secondary">
           <Sparkles size={15} color="#ffffff" />

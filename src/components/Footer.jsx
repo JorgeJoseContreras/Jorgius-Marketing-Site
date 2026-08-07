@@ -18,6 +18,22 @@ export default function Footer({ onOpenStatus }) {
     };
   }, []);
 
+  // Determine dot color based on current status code
+  const getDotStyle = (statusCode) => {
+    switch (statusCode) {
+      case 'degraded':
+        return { background: '#f59e0b', boxShadow: '0 0 8px #f59e0b' };
+      case 'outage':
+        return { background: '#ef4444', boxShadow: '0 0 8px #ef4444' };
+      case 'maintenance':
+        return { background: '#3b82f6', boxShadow: '0 0 8px #3b82f6' };
+      default:
+        return { background: '#22c55e', boxShadow: '0 0 8px #22c55e' }; // Green 100%
+    }
+  };
+
+  const dotStyle = getDotStyle(statusData.statusCode);
+
   return (
     <footer
       style={{
@@ -46,18 +62,18 @@ export default function Footer({ onOpenStatus }) {
               Jorgius
             </span>
 
-            {/* Live System Status Button in Footer */}
+            {/* Version tag badge with status-colored glowing dot */}
             <button
               onClick={onOpenStatus}
               className="pulse-badge"
               style={{ border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
             >
-              <span className="pulse-dot" />
-              <span>{statusData.status || 'All Systems Operational'} ({statusData.uptime || '100%'})</span>
+              <span className="pulse-dot" style={dotStyle} />
+              <span>Jorgius v2.5 • Native Apple iMessage Assistant</span>
             </button>
           </div>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', maxWidth: '350px' }}>
-            AI assistant operating natively inside Apple iMessage. Designed for speed and absolute privacy since 07/24/2026.
+            AI assistant operating natively inside Apple iMessage. Designed for speed and absolute privacy since 07/01/2026.
           </p>
         </div>
 
@@ -95,7 +111,7 @@ export default function Footer({ onOpenStatus }) {
           color: 'var(--text-muted)',
         }}
       >
-        <div>© {new Date().getFullYear()} Jorgius. All rights reserved. 07/24/2026 Creation Release.</div>
+        <div>© {new Date().getFullYear()} Jorgius. All rights reserved. Launched 07/01/2026.</div>
         <div>Built natively for the Apple iMessage ecosystem</div>
       </div>
     </footer>

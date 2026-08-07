@@ -4,6 +4,7 @@ import { CheckCircle, AlertTriangle, XCircle, Wrench, X, ShieldCheck } from 'luc
 
 export default function StatusModal({ isOpen, onClose }) {
   const [statusData, setStatusData] = useState(getSystemStatus());
+  const [hoveredBar, setHoveredBar] = useState(null);
 
   useEffect(() => {
     const handleUpdate = () => {
@@ -24,28 +25,53 @@ export default function StatusModal({ isOpen, onClose }) {
   const getStatusBadge = (code) => {
     switch (code) {
       case 'degraded':
-        return { color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)', icon: <AlertTriangle size={20} color="#f59e0b" />, label: 'Degraded Performance' };
+        return { color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)', icon: <AlertTriangle size={20} color="#f59e0b" />, label: 'Minor Outage / Degraded' };
       case 'outage':
-        return { color: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)', icon: <XCircle size={20} color="#ef4444" />, label: 'System Outage' };
+        return { color: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)', icon: <XCircle size={20} color="#ef4444" />, label: 'Major Outage' };
       case 'maintenance':
         return { color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.15)', icon: <Wrench size={20} color="#3b82f6" />, label: 'Under Maintenance' };
       default:
-        return { color: '#ffffff', bg: 'rgba(255, 255, 255, 0.1)', icon: <CheckCircle size={20} color="#ffffff" />, label: 'All Systems Operational' };
+        return { color: '#22c55e', bg: 'rgba(34, 197, 94, 0.15)', icon: <CheckCircle size={20} color="#22c55e" />, label: 'All Systems Operational' };
     }
   };
 
   const badge = getStatusBadge(statusData.statusCode);
 
-  // Generate days since creation date 7/24/2026
-  const creationDate = new Date('2026-07-24');
+  // Generate 30 daily bars with exact dates ending today
   const today = new Date();
-  const daysDiff = Math.max(1, Math.floor((today - creationDate) / (1000 * 60 * 60 * 24)) + 1);
+  const timelineBars = Array.from({ length: 30 }).map((_, i) => {
+    const d = new Date();
+    d.setDate(today.getDate() - (29 - i));
+    const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    
+    // Default to green 100% operational
+    let statusType = 'operational';
+    let color = '#22c55e'; // Green
+    let statusText = '100% Operational • No Incidents';
 
-  // Generate 30 timeline bars
-  const timelineBars = Array.from({ length: 30 }).map((_, i) => ({
-    dayNum: 30 - i,
-    isOperational: true,
-  }));
+    // If today and status is degraded or outage, reflect that bar
+    if (i === 29 && statusData.statusCode !== 'operational') {
+      statusType = statusData.statusCode;
+      if (statusType === 'degraded') {
+        color = '#f59e0b';
+        statusText = 'Minor Outage / Degraded';
+      } else if (statusType === 'outage') {
+        color = '#ef4444';
+        statusText = 'Major Outage';
+      } else if (statusType === 'maintenance') {
+        color = '#3b82f6';
+        statusText = 'Under Maintenance';
+      }
+    }
+
+    return {
+      index: i,
+      dateStr,
+      statusType,
+      color,
+      statusText,
+    };
+  });
 
   return (
     <div
@@ -105,7 +131,7 @@ export default function StatusModal({ isOpen, onClose }) {
           </h2>
         </div>
 
-        {/* Operational Status Card */}
+        {/* Operational Status Banner */}
         <div
           style={{
             padding: '16px 20px',
@@ -125,7 +151,7 @@ export default function StatusModal({ isOpen, onClose }) {
                 {statusData.status || badge.label}
               </div>
               <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                No incidents reported since creation on 07/24/2026
+                No incidents reported since launch on 07/01/2026
               </div>
             </div>
           </div>
@@ -138,36 +164,59 @@ export default function StatusModal({ isOpen, onClose }) {
           </div>
         </div>
 
-        {/* Uptime History Timeline Bars */}
-        <div style={{ marginBottom: '28px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>
-            <span>Daily Uptime History (Since Creation 07/24/2026)</span>
-            <span style={{ color: '#fff', fontWeight: '600' }}>{statusData.uptime || '100%'} Uptime</span>
+        {/* 30-Day Timeline Bar Container (NO static dates below, NO legend) */}
+        <div style={{ marginBottom: '28px', position: 'relative' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '12px' }}>
+            <span>Past 30 Days Uptime</span>
+            <span style={{ color: '#22c55e', fontWeight: '600' }}>100% Operational</span>
           </div>
 
-          <div style={{ display: 'flex', gap: '4px', height: '32px', alignItems: 'center' }}>
-            {timelineBars.map((bar, idx) => (
+          {/* Custom Mini Hover Tooltip Popup */}
+          {hoveredBar && (
+            <div
+              style={{
+                position: 'absolute',
+                top: '0px',
+                left: `${Math.min(Math.max((hoveredBar.index / 29) * 100, 15), 85)}%`,
+                transform: 'translate(-50%, -100%)',
+                background: '#1a1d26',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                borderRadius: '8px',
+                padding: '6px 12px',
+                fontSize: '0.75rem',
+                color: '#fff',
+                whiteSpace: 'nowrap',
+                boxShadow: '0 10px 20px rgba(0,0,0,0.5)',
+                zIndex: 10,
+                pointerEvents: 'none',
+              }}
+            >
+              <div style={{ fontWeight: '700', color: '#ffffff' }}>{hoveredBar.dateStr}</div>
+              <div style={{ color: hoveredBar.color, fontSize: '0.7rem', marginTop: '2px' }}>
+                {hoveredBar.statusText}
+              </div>
+            </div>
+          )}
+
+          {/* 30 Green Daily Bars */}
+          <div style={{ display: 'flex', gap: '4px', height: '36px', alignItems: 'center' }}>
+            {timelineBars.map((bar) => (
               <div
-                key={idx}
-                title={`Day ${bar.dayNum}: 100% Operational`}
+                key={bar.index}
+                onMouseEnter={() => setHoveredBar(bar)}
+                onMouseLeave={() => setHoveredBar(null)}
                 style={{
                   flex: 1,
                   height: '100%',
-                  background: 'rgba(255, 255, 255, 0.4)',
+                  background: bar.color, // Green 100%
                   borderRadius: '3px',
-                  transition: 'opacity 0.2s ease',
+                  transition: 'opacity 0.2s ease, transform 0.2s ease',
                   cursor: 'pointer',
+                  opacity: hoveredBar?.index === bar.index ? 1 : 0.85,
+                  transform: hoveredBar?.index === bar.index ? 'scaleY(1.1)' : 'scaleY(1)',
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.7')}
-                onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
               />
             ))}
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '6px' }}>
-            <span>30 Days Ago</span>
-            <span>Creation: 7/24/2026</span>
-            <span>Today</span>
           </div>
         </div>
 
@@ -200,7 +249,7 @@ export default function StatusModal({ isOpen, onClose }) {
               ))
             ) : (
               <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', padding: '12px', textAlign: 'center' }}>
-                No incidents reported since creation on 07/24/2026.
+                No incidents reported since creation on 07/01/2026.
               </div>
             )}
           </div>

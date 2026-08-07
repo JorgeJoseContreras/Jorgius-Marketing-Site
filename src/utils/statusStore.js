@@ -4,14 +4,14 @@ export const DEFAULT_STATUS_DATA = {
   status: 'All Systems Operational',
   statusCode: 'operational', // 'operational' | 'degraded' | 'outage' | 'maintenance'
   uptime: '100%',
-  creationDate: '2026-07-24',
+  creationDate: '2026-07-01',
   lastUpdated: new Date().toISOString(),
   incidents: [
     {
       id: 1,
-      date: 'July 24, 2026',
-      title: 'System Launched',
-      message: 'Jorgius iMessage Assistant system officially launched. All systems operational.',
+      date: 'July 1, 2026',
+      title: 'System Officially Launched',
+      message: 'Jorgius iMessage Assistant officially launched on July 1, 2026. All systems operational.',
       type: 'operational',
     },
   ],
@@ -36,7 +36,6 @@ export const saveSystemStatus = (newStatusData) => {
       lastUpdated: new Date().toISOString(),
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-    // Trigger storage event for same-window updates
     window.dispatchEvent(new Event('status-update'));
     return true;
   } catch (e) {

@@ -4,7 +4,7 @@ import { Sparkles, MessageSquare, ArrowRight } from 'lucide-react';
 export default function Hero() {
   return (
     <section style={{ padding: '110px 20px 40px 20px', textAlign: 'center', position: 'relative', zIndex: 2 }}>
-      {/* Main Title - Compact Typography */}
+      {/* Main Title */}
       <h1
         style={{
           fontSize: 'clamp(1.75rem, 3.8vw, 2.8rem)',
@@ -20,7 +20,7 @@ export default function Hero() {
         <span className="text-shimmer">Autonomous Intelligence</span>
       </h1>
 
-      {/* Subtitle */}
+      {/* Subtitle - Exact comma formatting as requested */}
       <p
         style={{
           fontSize: '0.98rem',
@@ -31,7 +31,7 @@ export default function Hero() {
           fontWeight: '400',
         }}
       >
-        Meet <strong style={{ color: '#fff' }}>Jorgius</strong> — the personal AI companion living right inside your native iMessage app. Zero downloads. Just text, command, and automate.
+        Meet <strong style={{ color: '#fff' }}>Jorgius</strong>, the personal AI companion living right inside your native iMessage app. Zero downloads. Just text, command, and automate.
       </p>
 
       {/* CTA Buttons */}

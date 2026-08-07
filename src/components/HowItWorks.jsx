@@ -1,21 +1,43 @@
 import React, { useState } from 'react';
 import TiltCard from './TiltCard';
-import { Send, CheckCircle, Loader2, Zap, MessageSquare } from 'lucide-react';
+import { Send, CheckCircle, Loader2, Zap, MessageSquare, AlertCircle } from 'lucide-react';
 
 const getWeb3FormsKey = () => atob("N2FhNTQxMzMtYWMzMS00MTY3LWI3N2YtY2MzOGRkNzNhMjIw");
 
+// Format digits as (XXX) XXX-XXXX
+const formatPhoneNumber = (value) => {
+  const digits = value.replace(/\D/g, '').slice(0, 10);
+  if (digits.length === 0) return '';
+  if (digits.length <= 3) return `(${digits}`;
+  if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+};
+
 export default function HowItWorks({ planMode = 'demo', onPlanChange }) {
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const isPro = planMode === 'pro';
 
+  const handlePhoneInput = (e) => {
+    const formatted = formatPhoneNumber(e.target.value);
+    setPhoneNumber(formatted);
+    setErrorMsg('');
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!phoneNumber.trim() || loading) return;
+    const rawDigits = phoneNumber.replace(/\D/g, '');
+
+    if (rawDigits.length !== 10) {
+      setErrorMsg('Please enter a valid 10-digit phone number.');
+      return;
+    }
 
     setLoading(true);
+    setErrorMsg('');
 
     const payloadSubject = isPro ? `Jorgius Pro: ${phoneNumber}` : `Jorgius Demo: ${phoneNumber}`;
 
@@ -52,65 +74,94 @@ export default function HowItWorks({ planMode = 'demo', onPlanChange }) {
       <TiltCard maxTilt={4}>
         <div style={{ padding: '32px 24px', textAlign: 'center' }}>
           
-          {/* Top Segmented Mode Switcher */}
+          {/* Top Segmented Mode Switcher with Smooth Animated Sliding Pill */}
           <div
             style={{
+              position: 'relative',
               display: 'inline-flex',
               background: 'rgba(255, 255, 255, 0.05)',
               padding: '4px',
               borderRadius: '9999px',
               border: '1px solid rgba(255, 255, 255, 0.12)',
               marginBottom: '24px',
-              gap: '4px',
+              width: '210px',
             }}
           >
+            {/* Sliding Pill Background Indicator */}
+            <div
+              style={{
+                position: 'absolute',
+                top: '4px',
+                bottom: '4px',
+                left: isPro ? 'calc(50% + 2px)' : '4px',
+                width: 'calc(50% - 6px)',
+                background: '#ffffff',
+                borderRadius: '9999px',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+                zIndex: 1,
+              }}
+            />
+
+            {/* Demo Button */}
             <button
               type="button"
               onClick={() => {
                 setSubmitted(false);
+                setErrorMsg('');
                 if (onPlanChange) onPlanChange('demo');
               }}
               style={{
-                padding: '6px 16px',
+                position: 'relative',
+                zIndex: 2,
+                flex: 1,
+                padding: '6px 12px',
                 borderRadius: '9999px',
                 border: 'none',
-                background: !isPro ? '#ffffff' : 'transparent',
+                background: 'transparent',
                 color: !isPro ? '#07080a' : 'var(--text-secondary)',
                 fontWeight: '700',
                 fontSize: '0.82rem',
                 cursor: 'pointer',
-                transition: 'all 0.2s ease',
+                transition: 'color 0.2s ease',
                 display: 'flex',
                 alignItems: 'center',
+                justifyContent: 'center',
                 gap: '6px',
               }}
             >
-              <MessageSquare size={13} />
+              <MessageSquare size={13} color={!isPro ? '#07080a' : 'var(--text-secondary)'} />
               <span>Demo</span>
             </button>
 
+            {/* Pro Button */}
             <button
               type="button"
               onClick={() => {
                 setSubmitted(false);
+                setErrorMsg('');
                 if (onPlanChange) onPlanChange('pro');
               }}
               style={{
-                padding: '6px 16px',
+                position: 'relative',
+                zIndex: 2,
+                flex: 1,
+                padding: '6px 12px',
                 borderRadius: '9999px',
                 border: 'none',
-                background: isPro ? '#ffffff' : 'transparent',
+                background: 'transparent',
                 color: isPro ? '#07080a' : 'var(--text-secondary)',
                 fontWeight: '700',
                 fontSize: '0.82rem',
                 cursor: 'pointer',
-                transition: 'all 0.2s ease',
+                transition: 'color 0.2s ease',
                 display: 'flex',
                 alignItems: 'center',
+                justifyContent: 'center',
                 gap: '6px',
               }}
             >
-              <Zap size={13} />
+              <Zap size={13} color={isPro ? '#07080a' : 'var(--text-secondary)'} />
               <span>Pro</span>
             </button>
           </div>
@@ -132,13 +183,22 @@ export default function HowItWorks({ planMode = 'demo', onPlanChange }) {
               <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <input
                   type="tel"
-                  placeholder="+1 (555) 000-0000"
+                  placeholder="555-000-0000"
                   value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  onChange={handlePhoneInput}
                   className="form-input"
                   style={{ textAlign: 'center', fontSize: '1.1rem', letterSpacing: '0.05em' }}
+                  maxLength={14}
                   required
                 />
+
+                {errorMsg && (
+                  <div style={{ color: '#ef4444', fontSize: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                    <AlertCircle size={14} />
+                    <span>{errorMsg}</span>
+                  </div>
+                )}
+
                 <button type="submit" className="btn-primary" disabled={loading} style={{ width: '100%', justifyContent: 'center' }}>
                   {loading ? (
                     <Loader2 size={16} className="animate-spin" />
@@ -157,13 +217,10 @@ export default function HowItWorks({ planMode = 'demo', onPlanChange }) {
                 <CheckCircle size={24} color="#ffffff" />
               </div>
               <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '6px' }}>
-                {isPro ? 'Payment Link Sent!' : 'Check your Messages!'}
+                {isPro ? 'Payment Link Sent!' : 'You\'re All Set!'}
               </h3>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: '1.4' }}>
-                {isPro
-                  ? `Jorgius sent a payment setup text to `
-                  : `Activation code sent to `}
-                <strong style={{ color: '#fff' }}>{phoneNumber}</strong>. Reply to start using your assistant.
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', lineHeight: '1.45' }}>
+                Jorgius will reach out shortly to <strong style={{ color: '#fff' }}>{phoneNumber}</strong>.
               </p>
             </div>
           )}

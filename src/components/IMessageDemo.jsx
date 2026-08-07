@@ -26,12 +26,14 @@ const PRESET_PROMPTS = [
   },
 ];
 
+const getLocalTime = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
 export default function IMessageDemo() {
   const [messages, setMessages] = useState([
     {
       sender: 'ai',
-      text: 'Hey Jorge! 👋 I’m Jorgius, your personal AI assistant operating inside iMessage. How can I help you today?',
-      time: '10:42 AM',
+      text: 'Hey there! 👋 I’m Jorgius, your personal AI assistant operating inside iMessage. How can I help you today?',
+      time: getLocalTime(),
     },
   ]);
   const [isTyping, setIsTyping] = useState(false);
@@ -85,7 +87,7 @@ export default function IMessageDemo() {
     const userMessage = {
       sender: 'user',
       text: textToSend,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      time: getLocalTime(),
     };
 
     setMessages((prev) => [...prev, userMessage]);
@@ -99,7 +101,7 @@ export default function IMessageDemo() {
       {
         sender: 'ai',
         text: aiReplyText,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        time: getLocalTime(),
       },
     ]);
   };
@@ -119,8 +121,8 @@ export default function IMessageDemo() {
     setMessages([
       {
         sender: 'ai',
-        text: 'Hey Jorge! 👋 I’m Jorgius, your personal AI assistant operating inside iMessage. How can I help you today?',
-        time: '10:42 AM',
+        text: 'Hey there! 👋 I’m Jorgius, your personal AI assistant operating inside iMessage. How can I help you today?',
+        time: getLocalTime(),
       },
     ]);
   };

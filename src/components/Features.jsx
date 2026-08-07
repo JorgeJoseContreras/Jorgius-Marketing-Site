@@ -11,7 +11,8 @@ import {
   Camera, 
   BellRing, 
   Mail, 
-  Globe 
+  Globe,
+  Edit3
 } from 'lucide-react';
 
 const FEATURES_DATA = [
@@ -20,6 +21,12 @@ const FEATURES_DATA = [
     title: 'iMessage and Telegram Chat',
     desc: 'Talk to your assistant naturally on the messaging apps you use every day.',
     tag: 'Multi-Platform',
+  },
+  {
+    icon: <Edit3 size={18} color="#ffffff" />,
+    title: 'Custom Assistant Name',
+    desc: 'Jorgius can be renamed — personalize your assistant to any name you choose in your contacts.',
+    tag: 'Personalized',
   },
   {
     icon: <Send size={18} color="#ffffff" />,

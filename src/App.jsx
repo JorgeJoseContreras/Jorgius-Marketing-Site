@@ -81,7 +81,7 @@ export default function App() {
     window.location.hash = '';
   };
 
-  // Render view components
+  // Admin view (separate layout)
   if (currentView === 'admin') {
     return (
       <AdminPanel
@@ -92,79 +92,80 @@ export default function App() {
     );
   }
 
-  if (currentView === 'auth') {
-    return (
-      <Auth
-        onBack={() => {
-          window.location.hash = '';
-        }}
-        onAuthSuccess={handleAuthSuccess}
-      />
-    );
-  }
-
-  if (currentView === 'dashboard') {
-    return (
-      <Dashboard
-        user={user}
-        onSignOut={handleSignOut}
-      />
-    );
-  }
-
   return (
     <div style={{ position: 'relative', minHeight: '100vh', background: 'var(--bg-dark)' }}>
-      {/* Dynamic Animated Particle Canvas Background */}
+      {/* Dynamic Animated Particle Canvas Background (Rendered on all views!) */}
       <BackgroundCanvas />
 
-      {/* Navigation */}
-      <Navbar
-        isLoggedIn={isLoggedIn}
-        onAuthClick={() => {
-          window.location.hash = '#auth';
-        }}
-        onDashboardClick={() => {
-          window.location.hash = '#dashboard';
-        }}
-      />
+      {/* Conditionally Render Content based on hash route */}
+      {currentView === 'auth' && (
+        <Auth
+          onBack={() => {
+            window.location.hash = '';
+          }}
+          onAuthSuccess={handleAuthSuccess}
+        />
+      )}
 
-      {/* Hero Section */}
-      <Hero />
+      {currentView === 'dashboard' && (
+        <Dashboard
+          user={user}
+          onSignOut={handleSignOut}
+        />
+      )}
 
-      {/* Interactive iMessage Playground */}
-      <section id="demo" style={{ padding: '24px 20px 48px 20px', position: 'relative', zIndex: 2, maxWidth: '1200px', margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-          <h2 style={{ fontSize: 'clamp(1.8rem, 3.2vw, 2.5rem)', fontWeight: '800', fontFamily: 'var(--font-heading)', marginBottom: '6px' }}>
-            Test Jorgius
-          </h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', maxWidth: '500px', margin: '0 auto' }}>
-            Click prompt pills below to simulate sending messages to Jorgius in iMessage.
-          </p>
-        </div>
+      {currentView === 'main' && (
+        <>
+          {/* Navigation */}
+          <Navbar
+            isLoggedIn={isLoggedIn}
+            onAuthClick={() => {
+              window.location.hash = '#auth';
+            }}
+            onDashboardClick={() => {
+              window.location.hash = '#dashboard';
+            }}
+          />
 
-        <IMessageDemo />
-      </section>
+          {/* Hero Section */}
+          <Hero />
 
-      {/* Features Grid */}
-      <Features />
+          {/* Interactive iMessage Playground */}
+          <section id="demo" style={{ padding: '24px 20px 48px 20px', position: 'relative', zIndex: 2, maxWidth: '1200px', margin: '0 auto' }}>
+            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+              <h2 style={{ fontSize: 'clamp(1.8rem, 3.2vw, 2.5rem)', fontWeight: '800', fontFamily: 'var(--font-heading)', marginBottom: '6px' }}>
+                Test Jorgius
+              </h2>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', maxWidth: '500px', margin: '0 auto' }}>
+                Click prompt pills below to simulate sending messages to Jorgius in iMessage.
+              </p>
+            </div>
 
-      {/* One-Step Activation Signup Form with Demo/Pro Switcher */}
-      <HowItWorks planMode={planMode} onPlanChange={setPlanMode} />
+            <IMessageDemo />
+          </section>
 
-      {/* Access Pricing Plans */}
-      <Pricing onSelectPlan={setPlanMode} />
+          {/* Features Grid */}
+          <Features />
 
-      {/* Footer */}
-      <Footer
-        onOpenStatus={() => setIsStatusOpen(true)}
-        isLoggedIn={isLoggedIn}
-        onAuthClick={() => {
-          window.location.hash = '#auth';
-        }}
-        onDashboardClick={() => {
-          window.location.hash = '#dashboard';
-        }}
-      />
+          {/* One-Step Activation Signup Form with Demo/Pro Switcher */}
+          <HowItWorks planMode={planMode} onPlanChange={setPlanMode} />
+
+          {/* Access Pricing Plans */}
+          <Pricing onSelectPlan={setPlanMode} />
+
+          {/* Footer */}
+          <Footer
+            onOpenStatus={() => setIsStatusOpen(true)}
+            isLoggedIn={isLoggedIn}
+            onAuthClick={() => {
+              window.location.hash = '#auth';
+            }}
+            onDashboardClick={() => {
+              window.location.hash = '#dashboard';
+            }}
+          />
+        </>
+      )}
 
       {/* System Status Modal */}
       <SystemStatusModal

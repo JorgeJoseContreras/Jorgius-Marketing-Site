@@ -82,6 +82,20 @@ export default function Dashboard({ user, onSignOut }) {
       if (error) throw error;
       setPlan('pro');
       setSuccessMsg('🎉 Stripe payment successful! Your Pro Membership is now active.');
+
+      // Send instant owner notification email via Web3Forms
+      fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          access_key: getWeb3FormsKey(),
+          subject: `🎉 NEW PRO SUBSCRIBER: ${user.email}`,
+          from_name: 'Jorgius Billing',
+          email: user.email,
+          message: `NEW PRO SUBSCRIPTION CONFIRMED!\n\nUser Email: ${user.email}\nUsername: ${user.user_metadata?.username || 'N/A'}\nPhone Number: ${user.user_metadata?.phone_number || 'N/A'}\nPlan: PRO ($4.99/mo)`,
+        }),
+      });
+
       // Clean URL hash
       if (window.location.hash.includes('upgraded=true')) {
         window.location.hash = '#dashboard';

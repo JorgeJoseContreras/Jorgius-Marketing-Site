@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+// Jorgius v2.5.1 Cache Buster
 import { supabase } from './utils/supabaseClient';
 import BackgroundCanvas from './components/BackgroundCanvas';
 import Navbar from './components/Navbar';

@@ -67,7 +67,7 @@ export default function Footer({ onOpenStatus, isLoggedIn, onAuthClick, onDashbo
               style={{ border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
             >
               <span className="pulse-dot" style={dotStyle} />
-              <span>Jorgius v2.5 • Native Apple iMessage Assistant</span>
+              <span>Jorgius v2.5.1 • Native Apple iMessage Assistant</span>
             </button>
           </div>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', maxWidth: '350px' }}>

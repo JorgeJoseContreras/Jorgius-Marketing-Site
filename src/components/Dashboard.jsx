@@ -969,23 +969,24 @@ export default function Dashboard({ user, onSignOut }) {
                         Current Subscription Status
                       </span>
                       <h3 style={{ fontSize: '1.4rem', fontWeight: '800', color: '#fff', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        {plan === 'pro' ? 'Pro Membership Plan' : 'Free Demo Plan'}
+                        {plan === 'ultra' ? 'Ultra Premium Plan' : plan === 'pro' ? 'Pro Membership Plan' : 'Free Demo Plan'}
+
                         <span style={{
                           fontSize: '0.72rem',
                           fontWeight: '700',
                           padding: '3px 10px',
                           borderRadius: '20px',
-                          background: plan === 'pro' ? 'rgba(34, 197, 94, 0.15)' : 'rgba(255, 255, 255, 0.1)',
-                          border: plan === 'pro' ? '1px solid rgba(34, 197, 94, 0.4)' : '1px solid rgba(255, 255, 255, 0.2)',
-                          color: plan === 'pro' ? '#4ade80' : '#fff'
+                          background: (plan === 'pro' || plan === 'ultra') ? 'rgba(34, 197, 94, 0.15)' : 'rgba(255, 255, 255, 0.1)',
+                          border: (plan === 'pro' || plan === 'ultra') ? '1px solid rgba(34, 197, 94, 0.4)' : '1px solid rgba(255, 255, 255, 0.2)',
+                          color: (plan === 'pro' || plan === 'ultra') ? '#4ade80' : '#fff'
                         }}>
-                          {plan === 'pro' ? 'ACTIVE ($4.99/mo)' : 'LIMITED DEMO'}
+                          {plan === 'ultra' ? 'ACTIVE ($19.99/mo)' : plan === 'pro' ? 'ACTIVE ($4.99/mo)' : 'LIMITED DEMO'}
                         </span>
                       </h3>
                     </div>
 
                     <div>
-                      {plan === 'pro' ? (
+                      {plan === 'pro' || plan === 'ultra' ? (
                         <button
                           onClick={() => setShowCancelModal(true)}
                           className="btn-secondary"
@@ -994,13 +995,32 @@ export default function Dashboard({ user, onSignOut }) {
                           <XCircle size={14} /> Cancel Membership
                         </button>
                       ) : (
-                        <button
-                          onClick={() => setShowCheckoutModal(true)}
-                          className="btn-primary"
-                          style={{ fontSize: '0.88rem', padding: '10px 20px', gap: '8px' }}
-                        >
-                          <Zap size={16} /> Upgrade to Pro ($4.99/mo)
-                        </button>
+                        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                          <button
+                            onClick={() => setShowCheckoutModal(true)}
+                            className="btn-primary"
+                            style={{ fontSize: '0.88rem', padding: '10px 20px', gap: '8px' }}
+                          >
+                            <Zap size={16} /> Upgrade to Pro ($4.99/mo)
+                          </button>
+                          <a
+                            href="https://buy.stripe.com/5kQ9ATccU5ew4BE9UraVa01"
+                            className="btn-primary"
+                            style={{
+                              fontSize: '0.88rem',
+                              padding: '10px 20px',
+                              gap: '8px',
+                              background: 'linear-gradient(90deg, #3b82f6, #8b5cf6)',
+                              border: 'none',
+                              textDecoration: 'none',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                          >
+                            <Zap size={16} fill="#000" /> Upgrade to Ultra ($19.99/mo)
+                          </a>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -1008,21 +1028,28 @@ export default function Dashboard({ user, onSignOut }) {
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '20px' }}>
                     <div>
                       <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'block' }}>Billing Cycle</span>
-                      <strong style={{ fontSize: '0.92rem', color: '#fff' }}>{plan === 'pro' ? 'Monthly ($4.99/month)' : 'Free Tier'}</strong>
+                      <strong style={{ fontSize: '0.92rem', color: '#fff' }}>
+                        {plan === 'ultra' ? 'Monthly ($19.99/month)' : plan === 'pro' ? 'Monthly ($4.99/month)' : 'Free Tier'}
+                      </strong>
                     </div>
 
                     <div>
                       <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'block' }}>iMessage AI Responses</span>
-                      <strong style={{ fontSize: '0.92rem', color: '#fff' }}>{plan === 'pro' ? 'Unlimited Messages' : '5 Trial Messages'}</strong>
+                      <strong style={{ fontSize: '0.92rem', color: '#fff' }}>
+                        {plan === 'ultra' || plan === 'pro' ? 'Unlimited Messages' : '10 Trial Messages'}
+                      </strong>
                     </div>
 
                     <div>
                       <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'block' }}>Priority Support</span>
-                      <strong style={{ fontSize: '0.92rem', color: '#fff' }}>{plan === 'pro' ? 'Included' : 'Standard'}</strong>
+                      <strong style={{ fontSize: '0.92rem', color: '#fff' }}>
+                        {plan === 'ultra' ? 'VIP 24/7 SLA' : plan === 'pro' ? 'Included' : 'Standard'}
+                      </strong>
                     </div>
                   </div>
                 </div>
               </TiltCard>
+
 
               {/* Upgrade Checkout Modal */}
               {showCheckoutModal && (

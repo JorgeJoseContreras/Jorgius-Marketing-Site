@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase, supabaseAdmin } from '../utils/supabaseClient';
+import { createStripeCheckoutSession } from '../utils/stripeClient';
 import TiltCard from './TiltCard';
 import { LogOut, Save, Loader2, CheckCircle2, AlertCircle, Phone, Sparkles, Shield, User, Settings, HelpCircle, MessageSquare, Edit2, Users, CreditCard, Zap, XCircle } from 'lucide-react';
 
@@ -65,12 +66,33 @@ export default function Dashboard({ user, onSignOut }) {
       setKnownName(meta.known_name || '');
       setAssistantName(meta.assistant_name || 'Jorgius');
 
-      // Auto-detect returning from payment upgrade redirect
+      // Auto-detect returning from Stripe payment upgrade redirect
       if (window.location.search.includes('upgraded=true') || window.location.hash.includes('upgraded=true')) {
-        handleConfirmUpgrade();
+        activateProPlan();
       }
     }
   }, [user, isAdmin]);
+
+  const activateProPlan = async () => {
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        data: { plan: 'pro' }
+      });
+      if (error) throw error;
+      setPlan('pro');
+      setSuccessMsg('🎉 Stripe payment successful! Your Pro Membership is now active.');
+      // Clean URL hash
+      if (window.location.hash.includes('upgraded=true')) {
+        window.location.hash = '#dashboard';
+      }
+      setTimeout(() => setSuccessMsg(''), 6000);
+    } catch (err) {
+      setErrorMsg('Failed to activate Pro plan: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Load users list for Admin
   const fetchAllUsers = async () => {
@@ -140,22 +162,16 @@ export default function Dashboard({ user, onSignOut }) {
     }
   };
 
-  const handleConfirmUpgrade = async () => {
+  const handleLaunchStripeCheckout = async () => {
     setLoading(true);
     setErrorMsg('');
-    setSuccessMsg('');
     try {
-      const { error } = await supabase.auth.updateUser({
-        data: { plan: 'pro' }
-      });
-      if (error) throw error;
-      setPlan('pro');
-      setShowCheckoutModal(false);
-      setSuccessMsg('Congratulations! Your Pro Membership has been activated.');
-      setTimeout(() => setSuccessMsg(''), 5000);
+      // Create official Stripe checkout session and get hosted URL
+      const checkoutUrl = await createStripeCheckoutSession(user?.email);
+      // Redirect user directly to Stripe's subscription checkout page
+      window.location.href = checkoutUrl;
     } catch (err) {
-      setErrorMsg('Failed to activate Pro plan: ' + err.message);
-    } finally {
+      setErrorMsg('Stripe Checkout Error: ' + err.message);
       setLoading(false);
     }
   };
@@ -769,18 +785,18 @@ export default function Dashboard({ user, onSignOut }) {
                         <strong style={{ color: '#fff' }}>$4.99 / mo</strong>
                       </div>
                       <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                        Cancel or downgrade anytime right from your dashboard.
+                        Processed securely via Stripe Official Subscription Checkout.
                       </div>
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                       <button
-                        onClick={handleConfirmUpgrade}
+                        onClick={handleLaunchStripeCheckout}
                         className="btn-primary"
                         disabled={loading}
                         style={{ width: '100%', padding: '12px', fontSize: '0.92rem', justifyContent: 'center' }}
                       >
-                        {loading ? <Loader2 size={16} className="animate-spin" /> : 'Confirm & Activate Pro Plan'}
+                        {loading ? <Loader2 size={16} className="animate-spin" /> : 'Confirm & Proceed to Stripe Payment →'}
                       </button>
 
                       <button

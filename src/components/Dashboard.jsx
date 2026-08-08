@@ -192,6 +192,11 @@ export default function Dashboard({ user, onSignOut }) {
     }
   };
 
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    if (onSignOut) onSignOut();
+  };
+
   // Admin edit action
   const handleEditUserClick = (u) => {
     setSelectedUser(u);

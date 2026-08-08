@@ -27,6 +27,7 @@ export default function Dashboard({ user, onSignOut }) {
   // Interactions fields
   const [knownName, setKnownName] = useState('');
   const [assistantName, setAssistantName] = useState('');
+  const [assistantStyle, setAssistantStyle] = useState('default');
   
   // Help Form fields
   const [helpMsg, setHelpMsg] = useState('');
@@ -65,6 +66,8 @@ export default function Dashboard({ user, onSignOut }) {
 
       setKnownName(meta.known_name || '');
       setAssistantName(meta.assistant_name || 'Jorgius');
+      setAssistantStyle(meta.assistant_style || 'default');
+
 
       // Auto-detect returning from Stripe payment upgrade redirect
       if (window.location.search.includes('upgraded=true') || window.location.hash.includes('upgraded=true')) {
@@ -235,6 +238,7 @@ export default function Dashboard({ user, onSignOut }) {
         data: {
           known_name: knownName,
           assistant_name: assistantName,
+          assistant_style: assistantStyle,
         },
       });
 
@@ -246,8 +250,6 @@ export default function Dashboard({ user, onSignOut }) {
         ? 'http://localhost:10000/api/user/rename-config'
         : 'https://notification-assistant.onrender.com/api/user/rename-config';
 
-
-
       try {
         await fetch(botApiUrl, {
           method: 'POST',
@@ -255,12 +257,14 @@ export default function Dashboard({ user, onSignOut }) {
           body: JSON.stringify({
             phone_number: rawDigits,
             known_name: knownName,
-            assistant_name: assistantName
+            assistant_name: assistantName,
+            assistant_style: assistantStyle
           }),
         });
       } catch (botErr) {
         console.warn('Bot API Sync Warning:', botErr);
       }
+
 
       setSuccessMsg('Interactions configuration saved & synced with Jorgius bot! Check your texts for confirmation.');
       setTimeout(() => setSuccessMsg(''), 4000);
@@ -731,12 +735,28 @@ export default function Dashboard({ user, onSignOut }) {
                         />
                       </div>
 
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: '6px' }}>
+                          Assistant Talking Style (Personality Mode)
+                        </label>
+                        <select
+                          value={assistantStyle}
+                          onChange={(e) => setAssistantStyle(e.target.value)}
+                          className="form-input"
+                          style={{ width: '100%', userSelect: 'auto', cursor: 'pointer' }}
+                        >
+                          <option value="default">Default (Normal, Friendly & Direct)</option>
+                          <option value="gangster">😎 Gangster Mode (Street-Smart & Casual Slang)</option>
+                        </select>
+                      </div>
+
                       <button type="submit" className="btn-primary" disabled={loading} style={{ alignSelf: 'flex-end', fontSize: '0.85rem' }}>
-                        {loading ? <Loader2 size={14} className="animate-spin" /> : <><Save size={14} /> Save Names</>}
+                        {loading ? <Loader2 size={14} className="animate-spin" /> : <><Save size={14} /> Save Interactions</>}
                       </button>
                     </form>
                   </div>
                 </TiltCard>
+
 
                 {/* Help Form */}
                 <TiltCard maxTilt={3}>

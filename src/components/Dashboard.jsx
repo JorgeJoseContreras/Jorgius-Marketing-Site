@@ -639,14 +639,31 @@ export default function Dashboard({ user, onSignOut }) {
           </nav>
         </div>
 
-        <button
-          onClick={handleSignOut}
-          className="btn-secondary"
-          style={{ width: '100%', padding: '10px', fontSize: '0.82rem', gap: '8px' }}
-        >
-          <LogOut size={14} /> Log Out
-        </button>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', alignItems: 'center' }}>
+          <button
+            onClick={handleSignOut}
+            className="btn-secondary"
+            style={{ width: '100%', padding: '10px', fontSize: '0.82rem', gap: '8px' }}
+          >
+            <LogOut size={14} /> Log Out
+          </button>
+          <a
+            href="/"
+            style={{
+              fontSize: '0.78rem',
+              color: 'var(--text-secondary)',
+              textDecoration: 'none',
+              transition: 'color 0.2s',
+              cursor: 'pointer'
+            }}
+            onMouseEnter={(e) => e.target.style.color = '#fff'}
+            onMouseLeave={(e) => e.target.style.color = 'var(--text-secondary)'}
+          >
+            Back to Home
+          </a>
+        </div>
       </aside>
+
 
       {/* MAIN VIEW AREA */}
       <main style={{ flex: 1, padding: '40px', position: 'relative', zIndex: 10, overflowY: 'auto' }}>

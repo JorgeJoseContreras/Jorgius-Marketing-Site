@@ -168,11 +168,13 @@ export default function Dashboard({ user, onSignOut }) {
             email: dbu.phone_number,
             user_metadata: {
               username: dbu.name || dbu.known_name || 'Authorized User',
-              phone_number: dbu.phone_number
+              phone_number: dbu.phone_number,
+              plan: dbu.plan || (dbuPhone.includes('9546816129') ? 'pro' : 'demo')
             }
           });
         }
       });
+
 
       setAllUsers(combined);
     } catch (err) {

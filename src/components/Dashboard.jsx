@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase, supabaseAdmin } from '../utils/supabaseClient';
 import TiltCard from './TiltCard';
-import { LogOut, Save, Loader2, CheckCircle2, AlertCircle, Phone, Sparkles, Shield, User, Settings, HelpCircle, MessageSquare, Edit2, Users } from 'lucide-react';
+import { LogOut, Save, Loader2, CheckCircle2, AlertCircle, Phone, Sparkles, Shield, User, Settings, HelpCircle, MessageSquare, Edit2, Users, CreditCard, Zap, XCircle } from 'lucide-react';
 
 const getWeb3FormsKey = () => atob("N2FhNTQxMzMtYWMzMS00MTY3LWI3N2YtY2MzOGRkNzNhMjIw");
 const getHelpWeb3FormsKey = () => "6e12e079-3a7a-4550-9962-abca5fe691c9";
@@ -15,7 +15,7 @@ const formatPhoneNumber = (value) => {
 };
 
 export default function Dashboard({ user, onSignOut }) {
-  // Sidebar tab state: 'settings' | 'interactions' | 'users'
+  // Sidebar tab state: 'settings' | 'interactions' | 'subscription' | 'users'
   const [activeTab, setActiveTab] = useState('settings');
 
   // Profile fields
@@ -30,6 +30,10 @@ export default function Dashboard({ user, onSignOut }) {
   // Help Form fields
   const [helpMsg, setHelpMsg] = useState('');
   
+  // Checkout Modal
+  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+
   // Admin View Users list
   const [allUsers, setAllUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null); // User to edit
@@ -60,6 +64,11 @@ export default function Dashboard({ user, onSignOut }) {
 
       setKnownName(meta.known_name || '');
       setAssistantName(meta.assistant_name || 'Jorgius');
+
+      // Auto-detect returning from payment upgrade redirect
+      if (window.location.search.includes('upgraded=true') || window.location.hash.includes('upgraded=true')) {
+        handleConfirmUpgrade();
+      }
     }
   }, [user, isAdmin]);
 
@@ -126,6 +135,46 @@ export default function Dashboard({ user, onSignOut }) {
       setTimeout(() => setSuccessMsg(''), 4000);
     } catch (err) {
       setErrorMsg(err.message || 'Failed to update account.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleConfirmUpgrade = async () => {
+    setLoading(true);
+    setErrorMsg('');
+    setSuccessMsg('');
+    try {
+      const { error } = await supabase.auth.updateUser({
+        data: { plan: 'pro' }
+      });
+      if (error) throw error;
+      setPlan('pro');
+      setShowCheckoutModal(false);
+      setSuccessMsg('Congratulations! Your Pro Membership has been activated.');
+      setTimeout(() => setSuccessMsg(''), 5000);
+    } catch (err) {
+      setErrorMsg('Failed to activate Pro plan: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleConfirmCancel = async () => {
+    setLoading(true);
+    setErrorMsg('');
+    setSuccessMsg('');
+    try {
+      const { error } = await supabase.auth.updateUser({
+        data: { plan: 'demo' }
+      });
+      if (error) throw error;
+      setPlan('demo');
+      setShowCancelModal(false);
+      setSuccessMsg('Your subscription has been cancelled. Account moved to Free Demo.');
+      setTimeout(() => setSuccessMsg(''), 5000);
+    } catch (err) {
+      setErrorMsg('Failed to cancel plan: ' + err.message);
     } finally {
       setLoading(false);
     }
@@ -314,6 +363,33 @@ export default function Dashboard({ user, onSignOut }) {
               <span>Interactions</span>
             </button>
 
+            <button
+              onClick={() => {
+                setActiveTab('subscription');
+                setErrorMsg('');
+                setSuccessMsg('');
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                width: '100%',
+                padding: '10px 12px',
+                borderRadius: '8px',
+                border: 'none',
+                background: activeTab === 'subscription' ? 'rgba(255, 255, 255, 0.08)' : 'transparent',
+                color: activeTab === 'subscription' ? '#fff' : 'var(--text-secondary)',
+                fontWeight: activeTab === 'subscription' ? '700' : '500',
+                fontSize: '0.85rem',
+                cursor: 'pointer',
+                textAlign: 'left',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <CreditCard size={16} />
+              <span>Manage Subscription</span>
+            </button>
+
             {isAdmin && (
               <button
                 onClick={() => {
@@ -367,6 +443,7 @@ export default function Dashboard({ user, onSignOut }) {
               <h2 style={{ fontSize: '1.45rem', fontWeight: '800', color: '#fff', fontFamily: 'var(--font-heading)' }}>
                 {activeTab === 'settings' && 'Account Settings'}
                 {activeTab === 'interactions' && 'Jorgius Interactions'}
+                {activeTab === 'subscription' && 'Manage Subscription'}
                 {activeTab === 'users' && 'Admin User Management'}
               </h2>
             </div>
@@ -603,7 +680,148 @@ export default function Dashboard({ user, onSignOut }) {
             </div>
           )}
 
-          {/* TAB 3: ADMIN VIEW USERS */}
+          {/* TAB 3: MANAGE SUBSCRIPTION */}
+          {activeTab === 'subscription' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              
+              {/* Active Plan Overview Card */}
+              <TiltCard maxTilt={2}>
+                <div style={{ padding: '28px', background: 'rgba(255,255,255,0.02)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px', marginBottom: '20px' }}>
+                    <div>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        Current Subscription Status
+                      </span>
+                      <h3 style={{ fontSize: '1.4rem', fontWeight: '800', color: '#fff', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        {plan === 'pro' ? 'Pro Membership Plan' : 'Free Demo Plan'}
+                        <span style={{
+                          fontSize: '0.72rem',
+                          fontWeight: '700',
+                          padding: '3px 10px',
+                          borderRadius: '20px',
+                          background: plan === 'pro' ? 'rgba(34, 197, 94, 0.15)' : 'rgba(255, 255, 255, 0.1)',
+                          border: plan === 'pro' ? '1px solid rgba(34, 197, 94, 0.4)' : '1px solid rgba(255, 255, 255, 0.2)',
+                          color: plan === 'pro' ? '#4ade80' : '#fff'
+                        }}>
+                          {plan === 'pro' ? 'ACTIVE ($4.99/mo)' : 'LIMITED DEMO'}
+                        </span>
+                      </h3>
+                    </div>
+
+                    <div>
+                      {plan === 'pro' ? (
+                        <button
+                          onClick={() => setShowCancelModal(true)}
+                          className="btn-secondary"
+                          style={{ color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.3)', fontSize: '0.85rem' }}
+                        >
+                          <XCircle size={14} /> Cancel Membership
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => setShowCheckoutModal(true)}
+                          className="btn-primary"
+                          style={{ fontSize: '0.88rem', padding: '10px 20px', gap: '8px' }}
+                        >
+                          <Zap size={16} /> Upgrade to Pro ($4.99/mo)
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '20px' }}>
+                    <div>
+                      <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'block' }}>Billing Cycle</span>
+                      <strong style={{ fontSize: '0.92rem', color: '#fff' }}>{plan === 'pro' ? 'Monthly ($4.99/month)' : 'Free Tier'}</strong>
+                    </div>
+
+                    <div>
+                      <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'block' }}>iMessage AI Responses</span>
+                      <strong style={{ fontSize: '0.92rem', color: '#fff' }}>{plan === 'pro' ? 'Unlimited Messages' : '5 Trial Messages'}</strong>
+                    </div>
+
+                    <div>
+                      <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'block' }}>Priority Support</span>
+                      <strong style={{ fontSize: '0.92rem', color: '#fff' }}>{plan === 'pro' ? 'Included' : 'Standard'}</strong>
+                    </div>
+                  </div>
+                </div>
+              </TiltCard>
+
+              {/* Upgrade Checkout Modal */}
+              {showCheckoutModal && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
+                  <div style={{ width: '100%', maxWidth: '480px', background: '#0e1017', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '16px', padding: '28px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                      <h3 style={{ fontSize: '1.2rem', fontWeight: '800', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Sparkles size={20} color="#fff" /> Upgrade to Jorgius Pro
+                      </h3>
+                      <button onClick={() => setShowCheckoutModal(false)} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: '1.2rem' }}>✕</button>
+                    </div>
+
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '20px', lineHeight: '1.5' }}>
+                      Get unlimited native iMessage AI assistant capabilities, custom prompt routines, smart search, and priority 24/7 support.
+                    </p>
+
+                    <div style={{ background: 'rgba(255,255,255,0.03)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)', marginBottom: '24px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                        <span>Jorgius Pro Monthly</span>
+                        <strong style={{ color: '#fff' }}>$4.99 / mo</strong>
+                      </div>
+                      <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                        Cancel or downgrade anytime right from your dashboard.
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      <button
+                        onClick={handleConfirmUpgrade}
+                        className="btn-primary"
+                        disabled={loading}
+                        style={{ width: '100%', padding: '12px', fontSize: '0.92rem', justifyContent: 'center' }}
+                      >
+                        {loading ? <Loader2 size={16} className="animate-spin" /> : 'Confirm & Activate Pro Plan'}
+                      </button>
+
+                      <button
+                        onClick={() => setShowCheckoutModal(false)}
+                        className="btn-secondary"
+                        style={{ width: '100%', padding: '10px', fontSize: '0.85rem', justifyContent: 'center' }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Cancel Membership Modal */}
+              {showCancelModal && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
+                  <div style={{ width: '100%', maxWidth: '440px', background: '#0e1017', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '16px', padding: '24px' }}>
+                    <h3 style={{ fontSize: '1.15rem', fontWeight: '700', marginBottom: '12px', color: '#ef4444' }}>
+                      Cancel Pro Membership?
+                    </h3>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '20px', lineHeight: '1.5' }}>
+                      Are you sure you want to cancel your Pro membership? Your account will be reverted to the limited Free Demo plan.
+                    </p>
+
+                    <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                      <button onClick={() => setShowCancelModal(false)} className="btn-secondary" style={{ fontSize: '0.85rem' }}>
+                        Keep Pro Plan
+                      </button>
+                      <button onClick={handleConfirmCancel} className="btn-primary" disabled={loading} style={{ background: '#ef4444', borderColor: '#ef4444', fontSize: '0.85rem' }}>
+                        {loading ? <Loader2 size={14} className="animate-spin" /> : 'Confirm Cancellation'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+            </div>
+          )}
+
+          {/* TAB 4: ADMIN VIEW USERS */}
           {activeTab === 'users' && isAdmin && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               

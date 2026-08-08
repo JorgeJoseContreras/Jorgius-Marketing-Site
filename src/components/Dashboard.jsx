@@ -31,7 +31,7 @@ export default function Dashboard({ user, onSignOut }) {
   // Help Form fields
   const [helpMsg, setHelpMsg] = useState('');
   
-  // Checkout Modal
+  // Checkout & Cancel Modals
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
 
@@ -201,8 +201,22 @@ export default function Dashboard({ user, onSignOut }) {
       if (error) throw error;
       setPlan('demo');
       setShowCancelModal(false);
-      setSuccessMsg('Your subscription has been cancelled. Account moved to Free Demo.');
-      setTimeout(() => setSuccessMsg(''), 5000);
+      setSuccessMsg('Your subscription has been canceled. You will not be billed again.');
+
+      // Send owner cancellation notification email via Web3Forms
+      fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          access_key: getWeb3FormsKey(),
+          subject: `⚠️ SUBSCRIPTION CANCELED: ${user.email}`,
+          from_name: 'Jorgius Billing System',
+          email: user.email,
+          message: `PRO SUBSCRIPTION CANCELED!\n\nUser Email: ${user.email}\nUsername: ${user.user_metadata?.username || 'N/A'}\nPhone Number: ${user.user_metadata?.phone_number || 'N/A'}\nStatus: REVERTED TO DEMO (NO FURTHER BILLING)`,
+        }),
+      });
+
+      setTimeout(() => setSuccessMsg(''), 6000);
     } catch (err) {
       setErrorMsg('Failed to cancel plan: ' + err.message);
     } finally {
@@ -544,18 +558,38 @@ export default function Dashboard({ user, onSignOut }) {
                         <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: '6px' }}>
                           Subscription Plan
                         </label>
-                        <select
-                          value={plan}
-                          onChange={(e) => setPlan(e.target.value)}
-                          className="form-input"
-                          style={{ width: '100%', userSelect: 'auto' }}
-                        >
-                          <option value="demo">Free Demo Plan</option>
-                          <option value="pro">Pro Unlimited Plan ($4.99/mo)</option>
-                        </select>
+                        
+                        {/* ONLY Admin can select plan via dropdown. Regular users must subscribe */}
+                        {isAdmin ? (
+                          <select
+                            value={plan}
+                            onChange={(e) => setPlan(e.target.value)}
+                            className="form-input"
+                            style={{ width: '100%', userSelect: 'auto' }}
+                          >
+                            <option value="demo">Free Demo Plan</option>
+                            <option value="pro">Pro Unlimited Plan ($4.99/mo)</option>
+                          </select>
+                        ) : (
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}>
+                            <span style={{ fontSize: '0.9rem', fontWeight: '700', color: '#fff' }}>
+                              {plan === 'pro' ? 'Pro Unlimited Plan ($4.99/mo)' : 'Free Demo Plan'}
+                            </span>
+                            {plan === 'demo' && (
+                              <button
+                                type="button"
+                                onClick={() => setActiveTab('subscription')}
+                                className="btn-primary"
+                                style={{ padding: '6px 12px', fontSize: '0.78rem' }}
+                              >
+                                Upgrade to Pro
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </div>
 
-                      <button type="submit" className="btn-primary" disabled={loading} style={{ alignSelf: 'flex-end', fontSize: '0.85rem' }}>
+                      <button type="submit" className="btn-primary" disabled={loading} style={{ alignSelf: 'flex-end', fontSize: '0.85rem', marginTop: '6px' }}>
                         {loading ? <Loader2 size={14} className="animate-spin" /> : <><Save size={14} /> Save Profile</>}
                       </button>
                     </form>
@@ -828,13 +862,17 @@ export default function Dashboard({ user, onSignOut }) {
               {/* Cancel Membership Modal */}
               {showCancelModal && (
                 <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
-                  <div style={{ width: '100%', maxWidth: '440px', background: '#0e1017', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '16px', padding: '24px' }}>
-                    <h3 style={{ fontSize: '1.15rem', fontWeight: '700', marginBottom: '12px', color: '#ef4444' }}>
+                  <div style={{ width: '100%', maxWidth: '460px', background: '#0e1017', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '16px', padding: '28px' }}>
+                    <h3 style={{ fontSize: '1.2rem', fontWeight: '800', marginBottom: '12px', color: '#ef4444' }}>
                       Cancel Pro Membership?
                     </h3>
                     <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '20px', lineHeight: '1.5' }}>
-                      Are you sure you want to cancel your Pro membership? Your account will be reverted to the limited Free Demo plan.
+                      Are you sure you want to cancel your Pro membership? <strong style={{ color: '#fff' }}>You will not be billed again</strong>, and your account will be reverted to the Free Demo tier.
                     </p>
+
+                    <div style={{ background: 'rgba(239, 68, 68, 0.05)', padding: '14px', borderRadius: '10px', border: '1px solid rgba(239, 68, 68, 0.2)', marginBottom: '20px', fontSize: '0.78rem', color: '#f87171' }}>
+                      ℹ️ Your subscription status will update immediately and future recurring billing will stop.
+                    </div>
 
                     <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
                       <button onClick={() => setShowCancelModal(false)} className="btn-secondary" style={{ fontSize: '0.85rem' }}>

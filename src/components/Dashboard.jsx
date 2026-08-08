@@ -118,14 +118,50 @@ export default function Dashboard({ user, onSignOut }) {
     }
   };
 
-  // Load users list for Admin
+  // Load users list for Admin (both Supabase Auth and Database AllowedUsers)
   const fetchAllUsers = async () => {
     if (!isAdmin) return;
     setLoading(true);
     try {
-      const { data, error } = await supabaseAdmin.auth.admin.listUsers();
-      if (error) throw error;
-      setAllUsers(data?.users || []);
+      // 1. Fetch Supabase Auth users
+      const { data: subData } = await supabaseAdmin.auth.admin.listUsers();
+      const supUsers = subData?.users || [];
+
+      // 2. Fetch Database AllowedUsers (includes Justin 9546816129 and DB roster)
+      let dbUsers = [];
+      try {
+        const res = await fetch('https://notification-assistant.onrender.com/api/admin/users');
+        const dbJson = await res.json();
+        if (dbJson.ok && dbJson.users) {
+          dbUsers = dbJson.users;
+        }
+      } catch (dbErr) {
+        console.warn('Error fetching DB users:', dbErr);
+      }
+
+      // Combine Supabase Auth + Database users into a unified list
+      const combined = [...supUsers];
+      
+      dbUsers.forEach((dbu) => {
+        const dbuPhone = dbu.phone_number?.replace(/\D/g, '') || '';
+        const exists = combined.some((u) => {
+          const uPhone = (u.user_metadata?.phone_number || '').replace(/\D/g, '');
+          return uPhone && dbuPhone && uPhone.slice(-10) === dbuPhone.slice(-10);
+        });
+
+        if (!exists) {
+          combined.push({
+            id: 'db-' + (dbu.phone_number || dbu.name),
+            email: dbu.phone_number,
+            user_metadata: {
+              username: dbu.name || dbu.known_name || 'Authorized User',
+              phone_number: dbu.phone_number
+            }
+          });
+        }
+      });
+
+      setAllUsers(combined);
     } catch (err) {
       setErrorMsg('Failed to load users: ' + err.message);
     } finally {
@@ -134,10 +170,11 @@ export default function Dashboard({ user, onSignOut }) {
   };
 
   useEffect(() => {
-    if (activeTab === 'users' && isAdmin) {
+    if (isAdmin) {
       fetchAllUsers();
     }
-  }, [activeTab]);
+  }, [isAdmin, activeTab]);
+
 
   const handleSavePhone = async (e) => {
     e.preventDefault();

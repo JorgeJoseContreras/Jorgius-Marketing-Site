@@ -10,6 +10,31 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script>
+      window.onerror = function (message, source, lineno, colno, error) {
+        var errorBox = document.createElement('div');
+        errorBox.style.position = 'fixed';
+        errorBox.style.inset = '20px';
+        errorBox.style.background = '#1a0e10';
+        errorBox.style.color = '#f87171';
+        errorBox.style.border = '2px solid #ef4444';
+        errorBox.style.padding = '20px';
+        errorBox.style.borderRadius = '12px';
+        errorBox.style.zIndex = '999999';
+        errorBox.style.overflow = 'auto';
+        errorBox.style.fontSize = '13px';
+        errorBox.style.fontFamily = 'monospace';
+        errorBox.style.userSelect = 'text';
+        errorBox.style.webkitUserSelect = 'text';
+        errorBox.innerHTML = '<h3 style="color:#ef4444;margin-bottom:10px;">Jorgius App Crashed on Load:</h3>' + 
+          '<p><strong>Message:</strong> ' + message + '</p>' + 
+          '<p><strong>Source:</strong> ' + source + '</p>' + 
+          '<p><strong>Line:</strong> ' + lineno + ' | <strong>Col:</strong> ' + colno + '</p>' +
+          '<pre style="margin-top:10px;background:rgba(0,0,0,0.4);padding:10px;border-radius:6px;color:#cbd5e1;">' + (error && error.stack ? error.stack : 'No stack trace') + '</pre>';
+        document.body.appendChild(errorBox);
+        return false;
+      };
+    </script>
   </head>
   <body>
     <div id="root"></div>

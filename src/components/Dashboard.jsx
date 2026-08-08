@@ -8,12 +8,17 @@ const getWeb3FormsKey = () => atob("N2FhNTQxMzMtYWMzMS00MTY3LWI3N2YtY2MzOGRkNzNh
 const getHelpWeb3FormsKey = () => "6e12e079-3a7a-4550-9962-abca5fe691c9";
 
 const formatPhoneNumber = (value) => {
-  const digits = value.replace(/\D/g, '').slice(0, 10);
+  let digits = (value || '').replace(/\D/g, '');
+  if (digits.length === 11 && digits.startsWith('1')) {
+    digits = digits.slice(1);
+  }
+  digits = digits.slice(0, 10);
   if (digits.length === 0) return '';
   if (digits.length <= 3) return `(${digits}`;
   if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
   return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
 };
+
 
 export default function Dashboard({ user, onSignOut }) {
   // Sidebar tab state: 'settings' | 'interactions' | 'subscription' | 'users'
@@ -176,7 +181,35 @@ export default function Dashboard({ user, onSignOut }) {
   }, [isAdmin, activeTab]);
 
 
+  const handleDeleteUser = async (u) => {
+    const targetVal = u.user_metadata?.phone_number || u.email;
+    const nameLabel = u.user_metadata?.username || u.email;
+    if (!window.confirm(`Are you sure you want to delete user '${nameLabel}' silently? (No text or notification will be sent)`)) {
+      return;
+    }
+    setLoading(true);
+    setErrorMsg('');
+    setSuccessMsg('');
+    try {
+      if (u.id && !u.id.startsWith('db-')) {
+        await supabaseAdmin.auth.admin.deleteUser(u.id);
+      }
+      await fetch('https://notification-assistant.onrender.com/api/admin/delete-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone_number: targetVal })
+      });
+      setSuccessMsg(`User '${nameLabel}' deleted silently.`);
+      fetchAllUsers();
+    } catch (err) {
+      setErrorMsg('Failed to delete user: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSavePhone = async (e) => {
+
     e.preventDefault();
     const rawDigits = phoneNumber.replace(/\D/g, '');
 
@@ -1211,14 +1244,24 @@ export default function Dashboard({ user, onSignOut }) {
                               </span>
                             </td>
                             <td style={{ padding: '12px 20px', textAlign: 'right' }}>
-                              <button
-                                onClick={() => handleEditUserClick(u)}
-                                className="btn-secondary"
-                                style={{ padding: '4px 10px', fontSize: '0.75rem', gap: '4px' }}
-                              >
-                                <Edit2 size={11} /> Edit
-                              </button>
+                              <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                <button
+                                  onClick={() => handleEditUserClick(u)}
+                                  className="btn-secondary"
+                                  style={{ padding: '4px 10px', fontSize: '0.75rem', gap: '4px' }}
+                                >
+                                  <Edit2 size={11} /> Edit
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteUser(u)}
+                                  className="btn-secondary"
+                                  style={{ padding: '4px 10px', fontSize: '0.75rem', gap: '4px', color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.3)' }}
+                                >
+                                  Delete
+                                </button>
+                              </div>
                             </td>
+
                           </tr>
                         );
                       })}

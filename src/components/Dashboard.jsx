@@ -244,7 +244,8 @@ export default function Dashboard({ user, onSignOut }) {
       const rawDigits = phoneNumber.replace(/\D/g, '') || (isAdmin ? '9549997574' : '');
       const botApiUrl = window.location.hostname.includes('localhost') 
         ? 'http://localhost:10000/api/user/rename-config'
-        : 'https://jorgius-assistant.onrender.com/api/user/rename-config';
+        : 'https://notification-assistant-45e0.onrender.com/api/user/rename-config';
+
 
       try {
         await fetch(botApiUrl, {

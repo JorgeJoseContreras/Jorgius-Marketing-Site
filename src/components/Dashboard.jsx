@@ -746,8 +746,13 @@ export default function Dashboard({ user, onSignOut }) {
                           style={{ width: '100%', userSelect: 'auto', cursor: 'pointer' }}
                         >
                           <option value="default">Default (Normal, Friendly & Direct)</option>
-                          <option value="gangster">😎 Gangster Mode (Street-Smart & Casual Slang)</option>
+                          <option value="gangster">Gangster Mode (Street-Smart Slang)</option>
+                          <option value="short">Keep it Short (Ultra-Concise, Fewest Words)</option>
+                          <option value="executive">Executive (Formal & Professional)</option>
+                          <option value="genz">Gen Z Mode (Hype & Internet Slang)</option>
+                          <option value="sarcastic">Sarcastic (Playfully Witty)</option>
                         </select>
+
                       </div>
 
                       <button type="submit" className="btn-primary" disabled={loading} style={{ alignSelf: 'flex-end', fontSize: '0.85rem' }}>

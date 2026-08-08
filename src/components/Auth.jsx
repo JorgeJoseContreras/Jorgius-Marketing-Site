@@ -56,7 +56,12 @@ export default function Auth({ onBack, onAuthSuccess }) {
         if (onAuthSuccess) onAuthSuccess(data.user);
       }
     } catch (err) {
-      setErrorMsg(err.message || 'Authentication failed. Please check your credentials.');
+      const msg = err.message || '';
+      if (msg.includes('504') || msg.includes('timeout') || err.status === 504) {
+        setErrorMsg('Email server timed out (504). Please turn off "Confirm Email" in Supabase Dashboard -> Auth -> Providers -> Email.');
+      } else {
+        setErrorMsg(msg || 'Authentication failed. Please check your credentials.');
+      }
     } finally {
       setLoading(false);
     }

@@ -2,7 +2,6 @@ const getStripeSecretKey = () => atob("c2tfdGVzdF81MVUxeVBzQ1Q5eTdCVTVEUUtDQ3Z3d
 
 export const createStripeCheckoutSession = async (userEmail) => {
   const params = new URLSearchParams();
-  params.append('payment_method_types[]', 'card');
   params.append('line_items[0][price_data][currency]', 'usd');
   params.append('line_items[0][price_data][product_data][name]', 'Jorgius Pro Membership');
   params.append('line_items[0][price_data][product_data][description]', 'Unlimited iMessage AI assistant features, custom routines, and priority support.');

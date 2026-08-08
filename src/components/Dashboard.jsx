@@ -65,20 +65,28 @@ export default function Dashboard({ user, onSignOut }) {
     if (user) {
       const meta = user.user_metadata || {};
       
-      // Retroactive action defaults for Admin account
-      if (isAdmin) {
-        setUsername(meta.username || 'Admin');
-        setPhoneNumber(formatPhoneNumber(meta.phone_number || '9549997574'));
-        setPlan(meta.plan || 'pro');
+      // Retroactive action defaults for Admin and VIP Pro accounts (Justin 9546816129)
+      const userPhoneDigits = (meta.phone_number || '').replace(/\D/g, '');
+      const isJustin = userPhoneDigits.includes('9546816129');
+
+      if (isAdmin || isJustin) {
+        setUsername(meta.username || (isAdmin ? 'Admin' : 'Justin'));
+        setPhoneNumber(formatPhoneNumber(meta.phone_number || (isAdmin ? '9549997574' : '9546816129')));
+        setPlan('pro');
+        // Auto-upgrade Supabase user metadata if not already set to pro
+        if (meta.plan !== 'pro') {
+          supabase.auth.updateUser({ data: { plan: 'pro', known_name: 'Justin' } });
+        }
       } else {
         setUsername(meta.username || user.email.split('@')[0]);
         setPhoneNumber(formatPhoneNumber(meta.phone_number || ''));
         setPlan(meta.plan || 'demo');
       }
 
-      setKnownName(meta.known_name || '');
+      setKnownName(meta.known_name || (isJustin ? 'Justin' : ''));
       setAssistantName(meta.assistant_name || 'Jorgius');
       setAssistantStyle(meta.assistant_style || 'default');
+
 
 
       // Auto-detect returning from Stripe payment upgrade redirect

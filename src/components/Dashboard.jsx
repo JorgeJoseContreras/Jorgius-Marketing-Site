@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase, supabaseAdmin } from '../utils/supabaseClient';
 import { createStripeCheckoutSession } from '../utils/stripeClient';
 import TiltCard from './TiltCard';
-import { LogOut, Save, Loader2, CheckCircle2, AlertCircle, Phone, Sparkles, Shield, User, Settings, HelpCircle, MessageSquare, Edit2, Users, CreditCard, Zap, XCircle } from 'lucide-react';
+import { LogOut, Save, Loader2, CheckCircle2, AlertCircle, Phone, Sparkles, Shield, User, Settings, HelpCircle, MessageSquare, Edit2, Users, CreditCard, Zap, XCircle, Send } from 'lucide-react';
 
 const getWeb3FormsKey = () => atob("N2FhNTQxMzMtYWMzMS00MTY3LWI3N2YtY2MzOGRkNzNhMjIw");
 const getHelpWeb3FormsKey = () => "6e12e079-3a7a-4550-9962-abca5fe691c9";
@@ -31,6 +31,12 @@ export default function Dashboard({ user, onSignOut }) {
   
   // Help Form fields
   const [helpMsg, setHelpMsg] = useState('');
+
+  // Admin Direct Messaging
+  const [adminMsgPhone, setAdminMsgPhone] = useState('');
+  const [adminCustomPhone, setAdminCustomPhone] = useState('');
+  const [adminMsgText, setAdminMsgText] = useState('');
+  const [adminSending, setAdminSending] = useState(false);
   
   // Checkout & Cancel Modals
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
@@ -46,6 +52,7 @@ export default function Dashboard({ user, onSignOut }) {
   const [loading, setLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+
 
   const isAdmin = user?.email === 'aghlc.nm@gmail.com';
 
@@ -178,6 +185,49 @@ export default function Dashboard({ user, onSignOut }) {
       setLoading(false);
     }
   };
+
+  const handleAdminSendMessage = async (e) => {
+    e.preventDefault();
+    setAdminSending(true);
+    setErrorMsg('');
+    setSuccessMsg('');
+
+    const target = adminCustomPhone.trim() || adminMsgPhone.trim();
+    if (!target) {
+      setErrorMsg('Please select a user or enter a custom recipient phone number.');
+      setAdminSending(false);
+      return;
+    }
+    if (!adminMsgText.trim()) {
+      setErrorMsg('Message content cannot be empty.');
+      setAdminSending(false);
+      return;
+    }
+
+    try {
+      const res = await fetch('https://notification-assistant.onrender.com/api/admin/send-message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone_number: target,
+          message: adminMsgText.trim()
+        })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setSuccessMsg(`🚀 Message sent from Jorgius to ${target}!`);
+        setAdminMsgText('');
+        setAdminCustomPhone('');
+      } else {
+        throw new Error(data.error || 'Failed to send message');
+      }
+    } catch (err) {
+      setErrorMsg('Admin Message Error: ' + err.message);
+    } finally {
+      setAdminSending(false);
+    }
+  };
+
 
   const handleLaunchStripeCheckout = async () => {
     setLoading(true);
@@ -937,12 +987,82 @@ export default function Dashboard({ user, onSignOut }) {
             </div>
           )}
 
-          {/* TAB 4: ADMIN VIEW USERS */}
+          {/* TAB 4: ADMIN VIEW USERS & MESSAGING */}
           {activeTab === 'users' && isAdmin && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               
+              {/* Admin Direct Message Sender Card */}
+              <TiltCard maxTilt={2}>
+                <div style={{ padding: '24px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                  <h3 style={{ fontSize: '1.05rem', fontWeight: '700', color: '#fff', marginBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Send size={18} color="#fff" /> Send Direct Message / Text as Jorgius
+                  </h3>
+
+                  <form onSubmit={handleAdminSendMessage} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px' }}>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: '6px' }}>
+                          Select Registered Recipient
+                        </label>
+                        <select
+                          value={adminMsgPhone}
+                          onChange={(e) => setAdminMsgPhone(e.target.value)}
+                          className="form-input"
+                          style={{ width: '100%', userSelect: 'auto' }}
+                        >
+                          <option value="">-- Choose Authorized User --</option>
+                          {allUsers.map((u) => {
+                            const p = u.user_metadata?.phone_number || '';
+                            const un = u.user_metadata?.username || u.email;
+                            return (
+                              <option key={u.id} value={p || u.email}>
+                                {un} ({p || u.email})
+                              </option>
+                            );
+                          })}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: '6px' }}>
+                          Or Custom Phone Number / Email (Overrides selection)
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. +19549997574 or user@icloud.com"
+                          value={adminCustomPhone}
+                          onChange={(e) => setAdminCustomPhone(e.target.value)}
+                          className="form-input"
+                          style={{ width: '100%' }}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: '6px' }}>
+                        Message Content (Text / iMessage from Jorgius)
+                      </label>
+                      <textarea
+                        placeholder="Type message to send to user..."
+                        value={adminMsgText}
+                        onChange={(e) => setAdminMsgText(e.target.value)}
+                        className="form-input"
+                        rows={3}
+                        style={{ width: '100%', resize: 'vertical' }}
+                        required
+                      />
+                    </div>
+
+                    <button type="submit" className="btn-primary" disabled={adminSending} style={{ alignSelf: 'flex-end', fontSize: '0.85rem' }}>
+                      {adminSending ? <Loader2 size={14} className="animate-spin" /> : <><Send size={14} /> Send Message from Jorgius</>}
+                    </button>
+                  </form>
+                </div>
+              </TiltCard>
+
               {/* User Edit Modal Overlay */}
               {selectedUser && (
+
                 <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
                   <div style={{ width: '100%', maxWidth: '440px', background: '#0e1017', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '16px', padding: '24px' }}>
                     <h3 style={{ fontSize: '1.15rem', fontWeight: '700', marginBottom: '14px', color: '#fff' }}>

@@ -240,7 +240,27 @@ export default function Dashboard({ user, onSignOut }) {
 
       if (error) throw error;
 
-      setSuccessMsg('Interactions configuration saved successfully.');
+      // Sync with Assistant Bot API & trigger iMessage confirmation text
+      const rawDigits = phoneNumber.replace(/\D/g, '') || (isAdmin ? '9549997574' : '');
+      const botApiUrl = window.location.hostname.includes('localhost') 
+        ? 'http://localhost:10000/api/user/rename-config'
+        : 'https://jorgius-assistant.onrender.com/api/user/rename-config';
+
+      try {
+        await fetch(botApiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            phone_number: rawDigits,
+            known_name: knownName,
+            assistant_name: assistantName
+          }),
+        });
+      } catch (botErr) {
+        console.warn('Bot API Sync Warning:', botErr);
+      }
+
+      setSuccessMsg('Interactions configuration saved & synced with Jorgius bot! Check your texts for confirmation.');
       setTimeout(() => setSuccessMsg(''), 4000);
     } catch (err) {
       setErrorMsg(err.message || 'Failed to save interactions.');
@@ -248,6 +268,7 @@ export default function Dashboard({ user, onSignOut }) {
       setLoading(false);
     }
   };
+
 
   const handleSendHelp = async (e) => {
     e.preventDefault();

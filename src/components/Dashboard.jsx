@@ -454,21 +454,38 @@ export default function Dashboard({ user, onSignOut }) {
 
     try {
       const rawDigits = editPhone.replace(/\D/g, '');
-      const { error } = await supabaseAdmin.auth.admin.updateUserById(selectedUser.id, {
-        user_metadata: {
-          ...selectedUser.user_metadata,
-          plan: editPlan,
-          phone_number: rawDigits,
-          username: editUsername,
-        },
-      });
+      const isDbUser = selectedUser.id && selectedUser.id.startsWith('db-');
 
-      if (error) throw error;
+      if (!isDbUser) {
+        const { error } = await supabaseAdmin.auth.admin.updateUserById(selectedUser.id, {
+          user_metadata: {
+            ...selectedUser.user_metadata,
+            plan: editPlan,
+            phone_number: rawDigits,
+            username: editUsername,
+          },
+        });
+        if (error) throw error;
+      }
 
-      setSuccessMsg(`User ${selectedUser.email} updated successfully.`);
+      // Sync/update database record on backend via /api/admin/update-user
+      try {
+        await fetch('https://notification-assistant.onrender.com/api/admin/update-user', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            phone_number: rawDigits || selectedUser.email,
+            known_name: editUsername,
+            plan: editPlan
+          })
+        });
+      } catch (backendErr) {
+        console.warn('Backend update warning:', backendErr);
+      }
+
+      setSuccessMsg('User profile updated successfully.');
       setSelectedUser(null);
       fetchAllUsers();
-      setTimeout(() => setSuccessMsg(''), 4000);
     } catch (err) {
       setErrorMsg('Failed to update user: ' + err.message);
     } finally {

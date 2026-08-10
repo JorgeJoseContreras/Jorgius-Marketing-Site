@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💬</text></svg>" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <title>Jorgius</title>
+    <meta name="description" content="Meet Jorgius. The intelligent AI assistant operating directly inside your native iMessage app. Smart scheduling, summaries, web search, and automation." />
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script>
+      window.onerror = function (message, source, lineno, colno, error) {
+        var errorBox = document.createElement('div');
+        errorBox.style.position = 'fixed';
+        errorBox.style.inset = '20px';
+        errorBox.style.background = '#1a0e10';
+        errorBox.style.color = '#f87171';
+        errorBox.style.border = '2px solid #ef4444';
+        errorBox.style.padding = '20px';
+        errorBox.style.borderRadius = '12px';
+        errorBox.style.zIndex = '999999';
+        errorBox.style.overflow = 'auto';
+        errorBox.style.fontSize = '13px';
+        errorBox.style.fontFamily = 'monospace';
+        errorBox.style.userSelect = 'text';
+        errorBox.style.webkitUserSelect = 'text';
+        errorBox.innerHTML = '<h3 style="color:#ef4444;margin-bottom:10px;">Jorgius App Crashed on Load:</h3>' + 
+          '<p><strong>Message:</strong> ' + message + '</p>' + 
+          '<p><strong>Source:</strong> ' + source + '</p>' + 
+          '<p><strong>Line:</strong> ' + lineno + ' | <strong>Col:</strong> ' + colno + '</p>' +
+          '<pre style="margin-top:10px;background:rgba(0,0,0,0.4);padding:10px;border-radius:6px;color:#cbd5e1;">' + (error && error.stack ? error.stack : 'No stack trace') + '</pre>';
+        document.body.appendChild(errorBox);
+        return false;
+      };
+    </script>
+    <script type="module" crossorigin src="./assets/index-DFt4qIbJ.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-f9NSfOPo.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

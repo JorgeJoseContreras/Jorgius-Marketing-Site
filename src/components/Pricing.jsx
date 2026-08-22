@@ -1,6 +1,7 @@
 import React from 'react';
 import TiltCard from './TiltCard';
-import { Check, Zap } from 'lucide-react';
+import { Check, Zap, Crown } from 'lucide-react';
+
 
 export default function Pricing({ onSelectPlan }) {
   const handlePlanClick = (e, plan) => {
@@ -25,7 +26,7 @@ export default function Pricing({ onSelectPlan }) {
         </p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px' }}>
         {/* Free Demo Plan */}
         <TiltCard maxTilt={4}>
           <div style={{ padding: '20px 18px' }}>
@@ -75,7 +76,7 @@ export default function Pricing({ onSelectPlan }) {
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.78rem', marginBottom: '14px' }}>Unlimited AI for power users.</p>
 
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '14px' }}>
-              <span style={{ fontSize: '2.2rem', fontWeight: '800', color: '#fff', fontFamily: 'var(--font-heading)' }}>$4.99</span>
+              <span style={{ fontSize: '2.2rem', fontWeight: '800', color: '#fff', fontFamily: 'var(--font-heading)' }}>$0.99</span>
               <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>/ month</span>
             </div>
 
@@ -91,6 +92,9 @@ export default function Pricing({ onSelectPlan }) {
               </li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: '#fff' }}>
                 <Check size={14} color="#ffffff" /> Full calendar integration
+              </li>
+              <li style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: '#fff' }}>
+                <Check size={14} color="#ffffff" /> Customizable talking styles
               </li>
             </ul>
 
@@ -111,61 +115,60 @@ export default function Pricing({ onSelectPlan }) {
             style={{
               padding: '20px 18px',
               position: 'relative',
-              background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%)',
-              border: '1px solid rgba(139, 92, 246, 0.4)',
+              background: 'rgba(255, 255, 255, 0.03)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
               borderRadius: '16px',
             }}
           >
-            <div style={{ position: 'absolute', top: '-10px', right: '12px', background: 'linear-gradient(90deg, #3b82f6, #8b5cf6)', color: '#fff', fontSize: '0.62rem', fontWeight: '800', padding: '2px 8px', borderRadius: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              Premium
-            </div>
             <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: '#fff', marginBottom: '4px' }}>
               Jorgius Ultra
             </h3>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.78rem', marginBottom: '14px' }}>All-inclusive elite power tier.</p>
 
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '14px' }}>
-              <span style={{ fontSize: '2.2rem', fontWeight: '800', color: '#fff', fontFamily: 'var(--font-heading)' }}>$19.99</span>
+              <span style={{ fontSize: '2.2rem', fontWeight: '800', color: '#fff', fontFamily: 'var(--font-heading)' }}>$4.99</span>
               <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>/ month</span>
             </div>
 
             <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 16px 0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <li style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: '#fff' }}>
-                <Check size={14} color="#8b5cf6" /> <strong>All Pro features</strong> included
+                <Check size={14} color="#ffffff" /> <strong>All Pro features</strong> included
               </li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: '#fff' }}>
-                <Check size={14} color="#8b5cf6" /> Dedicated agent computing instance
+                <Check size={14} color="#ffffff" /> Dedicated agent computing instance
               </li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: '#fff' }}>
-                <Check size={14} color="#8b5cf6" /> 100% uptime SLA & VIP priority support
+                <Check size={14} color="#ffffff" /> 100% uptime SLA & VIP priority support
               </li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: '#fff' }}>
-                <Check size={14} color="#8b5cf6" /> Custom system integration hooks
+                <Check size={14} color="#ffffff" /> Custom system integration hooks
+              </li>
+              <li style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: '#fff' }}>
+                <Check size={14} color="#ffffff" /> Email analysis & sending
               </li>
             </ul>
 
             <a
               href="https://buy.stripe.com/5kQ9ATccU5ew4BE9UraVa01"
-              className="btn-primary"
+              className="btn-ultra"
               style={{
                 width: '100%',
                 padding: '8px 16px',
                 textDecoration: 'none',
                 textAlign: 'center',
-                background: 'linear-gradient(90deg, #3b82f6, #8b5cf6)',
-                border: 'none',
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '8px'
               }}
             >
-              <Zap size={12} fill="#000" />
+              <Crown size={13} fill="#000" />
               <span>Get Ultra Access</span>
             </a>
           </div>
         </TiltCard>
       </div>
+
     </section>
   );
 }

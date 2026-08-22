@@ -24,6 +24,13 @@ export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
+    // Auto-capture referral code from URL parameter e.g. jorgius.com/?ref=CODE
+    const urlParams = new URLSearchParams(window.location.search);
+    const refCode = urlParams.get('ref');
+    if (refCode) {
+      localStorage.setItem('jorgius_ref', refCode);
+    }
+
     // Check initial active session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
@@ -52,7 +59,7 @@ export default function App() {
     const handleHashChange = () => {
       const hash = window.location.hash;
       if (hash === '#admin') {
-        setCurrentView('admin');
+        window.location.hash = '#dashboard';
       } else if (hash === '#auth') {
         setCurrentView('auth');
       } else if (hash === '#dashboard') {
@@ -112,6 +119,7 @@ export default function App() {
         <Dashboard
           user={user}
           onSignOut={handleSignOut}
+          onOpenStatus={() => setIsStatusOpen(true)}
         />
       )}
 

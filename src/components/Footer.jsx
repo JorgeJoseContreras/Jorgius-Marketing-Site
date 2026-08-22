@@ -1,20 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { getSystemStatus } from '../utils/statusStore';
+import { getSystemStatus, getAppVersion } from '../utils/statusStore';
 
 export default function Footer({ onOpenStatus, isLoggedIn, onAuthClick, onDashboardClick }) {
   const [statusData, setStatusData] = useState(getSystemStatus());
+  const [appVersion, setAppVersion] = useState(getAppVersion());
 
   useEffect(() => {
     const handleUpdate = () => {
       setStatusData(getSystemStatus());
+      setAppVersion(getAppVersion());
     };
 
     window.addEventListener('storage', handleUpdate);
     window.addEventListener('status-update', handleUpdate);
+    window.addEventListener('version-update', handleUpdate);
 
     return () => {
       window.removeEventListener('storage', handleUpdate);
       window.removeEventListener('status-update', handleUpdate);
+      window.removeEventListener('version-update', handleUpdate);
     };
   }, []);
 
@@ -67,7 +71,7 @@ export default function Footer({ onOpenStatus, isLoggedIn, onAuthClick, onDashbo
               style={{ border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
             >
               <span className="pulse-dot" style={dotStyle} />
-              <span>Jorgius v2.5.1 • Native Apple iMessage Assistant</span>
+              <span>Jorgius {appVersion}</span>
             </button>
           </div>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', maxWidth: '350px' }}>
@@ -92,35 +96,6 @@ export default function Footer({ onOpenStatus, isLoggedIn, onAuthClick, onDashbo
           >
             System Status
           </button>
-          {isLoggedIn ? (
-            <button
-              onClick={onDashboardClick}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: 'var(--text-secondary)',
-                cursor: 'pointer',
-                fontSize: '0.85rem',
-                padding: 0,
-              }}
-            >
-              Dashboard
-            </button>
-          ) : (
-            <button
-              onClick={onAuthClick}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: 'var(--text-secondary)',
-                cursor: 'pointer',
-                fontSize: '0.85rem',
-                padding: 0,
-              }}
-            >
-              Log In / Sign Up
-            </button>
-          )}
         </div>
       </div>
 
@@ -128,18 +103,44 @@ export default function Footer({ onOpenStatus, isLoggedIn, onAuthClick, onDashbo
         style={{
           maxWidth: '1100px',
           margin: '0 auto',
-          paddingTop: '20px',
           borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+          paddingTop: '20px',
           display: 'flex',
           flexWrap: 'wrap',
+          gap: '12px',
           justifyContent: 'space-between',
           alignItems: 'center',
-          fontSize: '0.78rem',
+          fontSize: '0.75rem',
           color: 'var(--text-muted)',
         }}
       >
-        <div>© {new Date().getFullYear()} Jorgius. All rights reserved. Launched 07/01/2026.</div>
-        <div>Built natively for the Apple iMessage ecosystem</div>
+        <div>
+          © {new Date().getFullYear()} Jorgius AI. All rights reserved.
+        </div>
+
+        <div style={{ display: 'flex', gap: '16px' }}>
+          {isLoggedIn ? (
+            <button
+              onClick={onDashboardClick}
+              style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.75rem', padding: 0 }}
+            >
+              Dashboard
+            </button>
+          ) : (
+            <button
+              onClick={onAuthClick}
+              style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.75rem', padding: 0 }}
+            >
+              Account Login
+            </button>
+          )}
+          <a href="https://notification-assistant.onrender.com/privacy" target="_blank" rel="noreferrer" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>
+            Privacy Policy
+          </a>
+          <a href="https://notification-assistant.onrender.com/terms" target="_blank" rel="noreferrer" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>
+            Terms of Service
+          </a>
+        </div>
       </div>
     </footer>
   );

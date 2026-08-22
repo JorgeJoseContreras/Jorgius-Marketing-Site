@@ -183,10 +183,7 @@ export default function Auth({ onBack, onAuthSuccess }) {
                 {loading ? (
                   <Loader2 size={16} className="animate-spin" />
                 ) : (
-                  <>
-                    <span>{isSignUp ? 'Create Account' : 'Log In'}</span>
-                    <ArrowRight size={15} />
-                  </>
+                  <span>{isSignUp ? 'Create Account' : 'Log In'}</span>
                 )}
               </button>
             </form>

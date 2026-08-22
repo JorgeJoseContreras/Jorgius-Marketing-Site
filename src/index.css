@@ -104,7 +104,6 @@ html, body {
   border: 1px solid var(--border-card);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  overflow: hidden;
 }
 
 .tilt-card-inner:hover {
@@ -204,6 +203,65 @@ html, body {
   border-color: rgba(255, 255, 255, 0.3);
   transform: translateY(-1px);
 }
+
+/* Dynamic Moving Glossy Ultra Button */
+.btn-ultra {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 22px;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #07080a;
+  font-weight: 700;
+  font-size: 0.9rem;
+  font-family: var(--font-heading);
+  text-decoration: none;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(255, 255, 255, 0.12);
+  transition: all 0.25s ease;
+}
+
+.btn-ultra::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -60%;
+  width: 50%;
+  height: 200%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.8),
+    transparent
+  );
+  transform: rotate(25deg);
+  animation: glossy-sweep 3s infinite ease-in-out;
+  pointer-events: none;
+}
+
+@keyframes glossy-sweep {
+  0% {
+    left: -60%;
+  }
+  35% {
+    left: 140%;
+  }
+  100% {
+    left: 140%;
+  }
+}
+
+.btn-ultra:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 255, 255, 0.3);
+  background: #ffffff;
+}
+
 
 /* Input Fields - Monotone */
 .form-input {

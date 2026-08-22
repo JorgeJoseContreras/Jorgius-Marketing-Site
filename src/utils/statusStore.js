@@ -1,9 +1,11 @@
 const STORAGE_KEY = 'jorgius_system_status_v1';
+const VERSION_KEY = 'jorgius_app_version_v1';
 
 export const DEFAULT_STATUS_DATA = {
   status: 'All Systems Operational',
   statusCode: 'operational', // 'operational' | 'degraded' | 'outage' | 'maintenance'
   uptime: '100%',
+  version: 'v2.5.1',
   creationDate: '2026-07-01',
   lastUpdated: new Date().toISOString(),
   incidents: [
@@ -40,6 +42,24 @@ export const saveSystemStatus = (newStatusData) => {
     return true;
   } catch (e) {
     console.error('Error saving status to localStorage:', e);
+    return false;
+  }
+};
+
+export const getAppVersion = () => {
+  try {
+    const v = localStorage.getItem(VERSION_KEY);
+    if (v) return v;
+  } catch (e) {}
+  return 'v2.5.1';
+};
+
+export const saveAppVersion = (newVersion) => {
+  try {
+    localStorage.setItem(VERSION_KEY, newVersion);
+    window.dispatchEvent(new Event('version-update'));
+    return true;
+  } catch (e) {
     return false;
   }
 };

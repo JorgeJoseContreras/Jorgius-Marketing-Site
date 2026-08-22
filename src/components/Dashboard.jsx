@@ -1,8 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase, supabaseAdmin } from '../utils/supabaseClient';
 import { createStripeCheckoutSession } from '../utils/stripeClient';
+import { getAppVersion } from '../utils/statusStore';
 import TiltCard from './TiltCard';
-import { LogOut, Save, Loader2, CheckCircle2, AlertCircle, Phone, Sparkles, Shield, User, Settings, HelpCircle, MessageSquare, Edit2, Users, CreditCard, Zap, XCircle, Send } from 'lucide-react';
+import CustomSelect from './CustomSelect';
+import AdminPanel from './AdminPanel';
+import { LogOut, Save, Loader2, CheckCircle2, AlertCircle, Phone, Sparkles, Shield, User, Settings, HelpCircle, MessageSquare, Edit2, Users, CreditCard, Zap, Crown, XCircle, Send, Cpu, UserPlus, Gift, Copy, Check, Activity, BarChart3, ShieldAlert, Mail, Lock, ShieldCheck } from 'lucide-react';
 
 const getWeb3FormsKey = () => atob("N2FhNTQxMzMtYWMzMS00MTY3LWI3N2YtY2MzOGRkNzNhMjIw");
 const getHelpWeb3FormsKey = () => "6e12e079-3a7a-4550-9962-abca5fe691c9";
@@ -20,7 +23,15 @@ const formatPhoneNumber = (value) => {
 };
 
 
-export default function Dashboard({ user, onSignOut }) {
+const defaultUserStats = {
+  lifetimeTotal: 0,
+  userSent: 0,
+  aiResponses: 0,
+  avgResponseSpeed: '0.8s',
+  monthlyBreakdown: [{ month: 'August 2026', count: 0 }],
+};
+
+export default function Dashboard({ user, onSignOut, onOpenStatus }) {
   // Sidebar tab state: 'settings' | 'interactions' | 'subscription' | 'users'
   const [activeTab, setActiveTab] = useState('settings');
 
@@ -36,6 +47,9 @@ export default function Dashboard({ user, onSignOut }) {
   
   // Help Form fields
   const [helpMsg, setHelpMsg] = useState('');
+
+  // Custom Integration fields
+  const [integrationMsg, setIntegrationMsg] = useState('');
 
   // Admin Direct Messaging
   const [adminMsgPhone, setAdminMsgPhone] = useState('');
@@ -54,12 +68,99 @@ export default function Dashboard({ user, onSignOut }) {
   const [editPhone, setEditPhone] = useState('');
   const [editUsername, setEditUsername] = useState('');
 
+  // Invite Users & Referral program fields
+  const [invitePhone, setInvitePhone] = useState('');
+  const [adminInvitePhone, setAdminInvitePhone] = useState('');
+  const [copiedRef, setCopiedRef] = useState(false);
+  const [inviteSending, setInviteSending] = useState(false);
+
   const [loading, setLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
 
   const isAdmin = user?.email === 'aghlc.nm@gmail.com';
+
+  const [appVersion, setAppVersion] = useState(getAppVersion());
+
+  useEffect(() => {
+    const handleVersionUpdate = () => {
+      setAppVersion(getAppVersion());
+    };
+    window.addEventListener('version-update', handleVersionUpdate);
+    return () => window.removeEventListener('version-update', handleVersionUpdate);
+  }, []);
+
+  const [navPillStyle, setNavPillStyle] = useState({ top: 0, height: 40 });
+  const navItemRefs = useRef({});
+
+  const [userMessageStats, setUserMessageStats] = useState(defaultUserStats);
+
+  // Fetch real-time live message stats from backend database
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchLiveStats() {
+      if (!user) return;
+      const meta = user.user_metadata || {};
+      const rawPhone = phoneNumber || meta.phone_number || (isAdmin ? '+19549997574' : '');
+      const cleanDigits = (rawPhone || '').replace(/\D/g, '');
+      const userParam = cleanDigits ? `+1${cleanDigits.slice(-10)}` : (user.email || '');
+
+      if (!userParam) return;
+
+      try {
+        const res = await fetch(`https://notification-assistant.onrender.com/api/user/analytics?user_id=${encodeURIComponent(userParam)}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.ok && isMounted) {
+            setUserMessageStats({
+              lifetimeTotal: data.lifetimeTotal ?? 0,
+              userSent: data.userSent ?? 0,
+              aiResponses: data.aiResponses ?? 0,
+              avgResponseSpeed: data.avgResponseSpeed || '0.8s',
+              monthlyBreakdown: (data.monthlyBreakdown && data.monthlyBreakdown.length > 0) 
+                ? data.monthlyBreakdown 
+                : [{ month: 'August 2026', count: 0 }],
+            });
+          }
+        }
+      } catch (err) {
+        console.warn('Unable to fetch live analytics from backend:', err);
+      }
+    }
+
+    fetchLiveStats();
+    const interval = setInterval(fetchLiveStats, 20000); // Live poll every 20s
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [user, phoneNumber, isAdmin]);
+
+  const navTabs = [
+    { id: 'settings', label: 'Settings', icon: Settings },
+    { id: 'interactions', label: 'Interactions', icon: MessageSquare },
+    { id: 'voice', label: 'Voice & Phone Calls', icon: Phone, isUltra: true },
+    { id: 'email', label: 'Email Analysis', icon: Mail, isUltra: true },
+    { id: 'subscription', label: 'Manage Subscription', icon: CreditCard },
+    { id: 'invite', label: 'Invite Users', icon: UserPlus },
+    { id: 'support', label: 'Help & Support', icon: HelpCircle },
+    { id: 'integrations', label: 'Custom Integrations', icon: Cpu },
+    ...(isAdmin ? [
+      { id: 'users', label: 'View Users', icon: Users },
+      { id: 'status', label: 'System Status Editor', icon: ShieldAlert },
+    ] : []),
+  ];
+
+  useEffect(() => {
+    const activeEl = navItemRefs.current[activeTab];
+    if (activeEl) {
+      setNavPillStyle({
+        top: activeEl.offsetTop,
+        height: activeEl.offsetHeight,
+      });
+    }
+  }, [activeTab, isAdmin]);
 
   useEffect(() => {
     if (user) {
@@ -72,10 +173,10 @@ export default function Dashboard({ user, onSignOut }) {
       if (isAdmin || isJustin) {
         setUsername(meta.username || (isAdmin ? 'Admin' : 'Justin'));
         setPhoneNumber(formatPhoneNumber(meta.phone_number || (isAdmin ? '9549997574' : '9546816129')));
-        setPlan('pro');
-        // Auto-upgrade Supabase user metadata if not already set to pro
-        if (meta.plan !== 'pro') {
-          supabase.auth.updateUser({ data: { plan: 'pro', known_name: 'Justin' } });
+        setPlan(meta.plan || 'pro');
+        // Initial setup for VIP accounts if plan metadata hasn't been initialized yet
+        if (!meta.plan) {
+          supabase.auth.updateUser({ data: { plan: 'pro', known_name: isJustin ? 'Justin' : 'Admin' } });
         }
       } else {
         setUsername(meta.username || user.email.split('@')[0]);
@@ -91,20 +192,24 @@ export default function Dashboard({ user, onSignOut }) {
 
       // Auto-detect returning from Stripe payment upgrade redirect
       if (window.location.search.includes('upgraded=true') || window.location.hash.includes('upgraded=true')) {
-        activateProPlan();
+        const fullUrl = window.location.href;
+        const targetPlan = fullUrl.includes('plan=ultra') ? 'ultra' : 'pro';
+        activatePlan(targetPlan);
       }
     }
   }, [user, isAdmin]);
 
-  const activateProPlan = async () => {
+  const activatePlan = async (targetPlan = 'pro') => {
     setLoading(true);
+    const selectedPlan = targetPlan === 'ultra' ? 'ultra' : 'pro';
+    const planName = selectedPlan === 'ultra' ? 'Ultra Premium' : 'Pro Unlimited';
     try {
       const { error } = await supabase.auth.updateUser({
-        data: { plan: 'pro' }
+        data: { plan: selectedPlan }
       });
       if (error) throw error;
-      setPlan('pro');
-      setSuccessMsg('🎉 Stripe payment successful! Your Pro Membership is now active.');
+      setPlan(selectedPlan);
+      setSuccessMsg(`🎉 Stripe payment successful! Your ${planName} Membership is now active.`);
 
       // Send instant owner notification email via Web3Forms
       fetch('https://api.web3forms.com/submit', {
@@ -112,20 +217,20 @@ export default function Dashboard({ user, onSignOut }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           access_key: getWeb3FormsKey(),
-          subject: `🎉 NEW PRO SUBSCRIBER: ${user.email}`,
+          subject: `🎉 NEW ${selectedPlan.toUpperCase()} SUBSCRIBER: ${user.email}`,
           from_name: 'Jorgius Billing',
           email: user.email,
-          message: `NEW PRO SUBSCRIPTION CONFIRMED!\n\nUser Email: ${user.email}\nUsername: ${user.user_metadata?.username || 'N/A'}\nPhone Number: ${user.user_metadata?.phone_number || 'N/A'}\nPlan: PRO ($4.99/mo)`,
+          message: `NEW ${selectedPlan.toUpperCase()} SUBSCRIPTION CONFIRMED!\n\nUser Email: ${user.email}\nUsername: ${user.user_metadata?.username || 'N/A'}\nPhone Number: ${user.user_metadata?.phone_number || 'N/A'}\nPlan: ${selectedPlan.toUpperCase()}`,
         }),
       });
 
-      // Clean URL hash
-      if (window.location.hash.includes('upgraded=true')) {
-        window.location.hash = '#dashboard';
+      // Clean URL parameters
+      if (window.location.search.includes('upgraded=true') || window.location.hash.includes('upgraded=true')) {
+        window.history.replaceState({}, document.title, window.location.pathname + '#dashboard');
       }
       setTimeout(() => setSuccessMsg(''), 6000);
     } catch (err) {
-      setErrorMsg('Failed to activate Pro plan: ' + err.message);
+      setErrorMsg(`Failed to activate ${selectedPlan} plan: ` + err.message);
     } finally {
       setLoading(false);
     }
@@ -152,14 +257,35 @@ export default function Dashboard({ user, onSignOut }) {
         console.warn('Error fetching DB users:', dbErr);
       }
 
-      // Combine Supabase Auth + Database users into a unified list
-      const combined = [...supUsers];
-      
+      // Combine Supabase Auth + Database users into a unified list, strictly deduplicated
+      const combined = [];
+      const seenKeys = new Set();
+
+      supUsers.forEach((u) => {
+        const uEmail = (u.email || '').toLowerCase();
+        const uUsername = (u.user_metadata?.username || '').toLowerCase();
+        const key = uEmail || uUsername || u.id;
+        if (!seenKeys.has(key)) {
+          seenKeys.add(key);
+          combined.push(u);
+        }
+      });
+
       dbUsers.forEach((dbu) => {
         const dbuPhone = dbu.phone_number?.replace(/\D/g, '') || '';
+        const dbuEmail = (dbu.phone_number || '').toLowerCase();
+        const dbuUsername = (dbu.name || dbu.known_name || '').toLowerCase();
+
         const exists = combined.some((u) => {
           const uPhone = (u.user_metadata?.phone_number || '').replace(/\D/g, '');
-          return uPhone && dbuPhone && uPhone.slice(-10) === dbuPhone.slice(-10);
+          const uEmail = (u.email || '').toLowerCase();
+          const uUsername = (u.user_metadata?.username || '').toLowerCase();
+          
+          const matchPhone = uPhone && dbuPhone && uPhone.slice(-10) === dbuPhone.slice(-10);
+          const matchEmail = uEmail && dbuEmail && uEmail === dbuEmail;
+          const matchUsername = uUsername && dbuUsername && uUsername === dbuUsername;
+
+          return matchPhone || matchEmail || matchUsername;
         });
 
         if (!exists) {
@@ -174,7 +300,6 @@ export default function Dashboard({ user, onSignOut }) {
           });
         }
       });
-
 
       setAllUsers(combined);
     } catch (err) {
@@ -243,19 +368,21 @@ export default function Dashboard({ user, onSignOut }) {
 
       if (error) throw error;
 
-      // Submit notification email to owner via Web3Forms
-      const payloadSubject = `Jorgius Profile Update: ${user.email}`;
-      await fetch('https://api.web3forms.com/submit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          access_key: getWeb3FormsKey(),
-          subject: payloadSubject,
-          from_name: 'Jorgius Dashboard',
-          email: user.email,
-          message: `User Profile Updated:\nEmail: ${user.email}\nUsername: ${username}\nPhone Number: ${phoneNumber}\nPlan: ${plan.toUpperCase()}`,
-        }),
-      });
+      // Submit notification email to owner via Web3Forms (for non-admin user updates)
+      if (!isAdmin) {
+        const payloadSubject = `Jorgius Profile Update: ${user.email}`;
+        await fetch('https://api.web3forms.com/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            access_key: getWeb3FormsKey(),
+            subject: payloadSubject,
+            from_name: 'Jorgius Dashboard',
+            email: user.email,
+            message: `User Profile Updated:\nEmail: ${user.email}\nUsername: ${username}\nPhone Number: ${phoneNumber}\nPlan: ${plan.toUpperCase()}`,
+          }),
+        });
+      }
 
       setSuccessMsg('Account settings updated successfully.');
       setTimeout(() => setSuccessMsg(''), 4000);
@@ -308,6 +435,72 @@ export default function Dashboard({ user, onSignOut }) {
     }
   };
 
+  const handleSendUserInvite = async (e) => {
+    e.preventDefault();
+    const rawDigits = invitePhone.replace(/\D/g, '');
+    if (rawDigits.length !== 10) {
+      setErrorMsg('Please enter a valid 10-digit phone number for the iMessage invite.');
+      return;
+    }
+    setInviteSending(true);
+    setErrorMsg('');
+    setSuccessMsg('');
+
+    const refCode = user?.id ? user.id.slice(0, 8) : 'vip';
+    const refLink = `https://jorgius.com/?ref=${refCode}`;
+    const inviteMessage = `Hey! ${username || 'Your friend'} invited you to try Jorgius AI. Sign up using their link to get started: ${refLink}`;
+
+    try {
+      await fetch('https://notification-assistant.onrender.com/api/admin/send-message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone_number: rawDigits,
+          message: inviteMessage
+        })
+      });
+      setSuccessMsg(`🚀 Referral iMessage invite sent to ${formatPhoneNumber(rawDigits)}!`);
+      setInvitePhone('');
+      setTimeout(() => setSuccessMsg(''), 5000);
+    } catch (err) {
+      setErrorMsg('Failed to send iMessage invite: ' + err.message);
+    } finally {
+      setInviteSending(false);
+    }
+  };
+
+  const handleSendAdminInvite = async (e) => {
+    e.preventDefault();
+    const rawDigits = adminInvitePhone.replace(/\D/g, '');
+    if (rawDigits.length !== 10) {
+      setErrorMsg('Please enter a valid 10-digit phone number for the iMessage invite.');
+      return;
+    }
+    setInviteSending(true);
+    setErrorMsg('');
+    setSuccessMsg('');
+
+    const inviteMessage = `Hey! You've been invited by Admin to create your account on Jorgius AI. Sign up here to activate your access: https://jorgius.com/#pricing`;
+
+    try {
+      await fetch('https://notification-assistant.onrender.com/api/admin/send-message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone_number: rawDigits,
+          message: inviteMessage
+        })
+      });
+      setSuccessMsg(`🚀 Admin iMessage invite sent to ${formatPhoneNumber(rawDigits)}!`);
+      setAdminInvitePhone('');
+      setTimeout(() => setSuccessMsg(''), 5000);
+    } catch (err) {
+      setErrorMsg('Failed to send Admin iMessage invite: ' + err.message);
+    } finally {
+      setInviteSending(false);
+    }
+  };
+
 
   const handleLaunchStripeCheckout = async () => {
     setLoading(true);
@@ -341,7 +534,7 @@ export default function Dashboard({ user, onSignOut }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          access_key: getWeb3FormsKey(),
+          access_key: 'dd12f643-2cc8-4b82-ba8d-309d1fcb4329',
           subject: `⚠️ SUBSCRIPTION CANCELED: ${user.email}`,
           from_name: 'Jorgius Billing System',
           email: user.email,
@@ -352,6 +545,38 @@ export default function Dashboard({ user, onSignOut }) {
       setTimeout(() => setSuccessMsg(''), 6000);
     } catch (err) {
       setErrorMsg('Failed to cancel plan: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDowngradeToPro = async () => {
+    setLoading(true);
+    setErrorMsg('');
+    setSuccessMsg('');
+    try {
+      const { error } = await supabase.auth.updateUser({
+        data: { plan: 'pro' }
+      });
+      if (error) throw error;
+      setPlan('pro');
+      setSuccessMsg('Your plan has been updated to Pro Unlimited ($4.99/mo).');
+
+      fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          access_key: 'dd12f643-2cc8-4b82-ba8d-309d1fcb4329',
+          subject: `📉 PLAN DOWNGRADED TO PRO: ${user.email}`,
+          from_name: 'Jorgius Billing System',
+          email: user.email,
+          message: `SUBSCRIPTION CHANGED TO PRO!\n\nUser Email: ${user.email}\nUsername: ${user.user_metadata?.username || 'N/A'}\nPhone Number: ${user.user_metadata?.phone_number || 'N/A'}\nStatus: PRO UNLIMITED ($4.99/MO)`,
+        }),
+      });
+
+      setTimeout(() => setSuccessMsg(''), 6000);
+    } catch (err) {
+      setErrorMsg('Failed to change plan: ' + err.message);
     } finally {
       setLoading(false);
     }
@@ -442,6 +667,43 @@ export default function Dashboard({ user, onSignOut }) {
     }
   };
 
+  const handleSendIntegrationRequest = async (e) => {
+    e.preventDefault();
+    if (plan !== 'ultra') return;
+    if (!integrationMsg.trim()) return;
+
+    setLoading(true);
+    setErrorMsg('');
+    setSuccessMsg('');
+
+    try {
+      const response = await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          access_key: 'ef6d4437-3491-485e-aba3-d70abbf4676d',
+          subject: `🔧 CUSTOM INTEGRATION REQUEST: ${user.email}`,
+          from_name: username || 'Jorgius User',
+          email: user.email,
+          message: `CUSTOM INTEGRATION REQUEST!\n\nUser Email: ${user.email}\nUsername: ${username || 'N/A'}\nPhone Number: ${phoneNumber || 'N/A'}\nPlan: ${plan}\n\nRequest Details:\n${integrationMsg}`,
+        }),
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        setSuccessMsg('Your custom integration request has been submitted successfully!');
+        setIntegrationMsg('');
+        setTimeout(() => setSuccessMsg(''), 5000);
+      } else {
+        throw new Error(result.message || 'Failed to submit request.');
+      }
+    } catch (err) {
+      setErrorMsg('Error submitting request: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     if (onSignOut) onSignOut();
@@ -522,120 +784,96 @@ export default function Dashboard({ user, onSignOut }) {
         }}
       >
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '32px' }}>
-            <span style={{ fontSize: '1.25rem', fontWeight: '800', fontFamily: 'var(--font-heading)' }}>Jorgius</span>
+          <div style={{ marginBottom: '28px' }}>
+            <span style={{ fontSize: '1.25rem', fontWeight: '800', fontFamily: 'var(--font-heading)', color: '#fff', display: 'block' }}>Jorgius</span>
+            <button
+              type="button"
+              onClick={() => {
+                if (onOpenStatus) {
+                  onOpenStatus();
+                }
+              }}
+              style={{
+                background: 'none',
+                border: 'none',
+                padding: 0,
+                fontSize: '0.72rem',
+                color: 'var(--text-secondary)',
+                fontWeight: '500',
+                marginTop: '4px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+              title="Click to view live System Status"
+            >
+              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981', display: 'inline-block' }}></span>
+              <span>{appVersion}</span>
+            </button>
           </div>
 
-          <nav style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <button
-              onClick={() => {
-                setActiveTab('settings');
-                setErrorMsg('');
-                setSuccessMsg('');
-              }}
+          <nav style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {/* Smooth Sliding Active Indicator Pill */}
+            <div
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                width: '100%',
-                padding: '10px 12px',
+                position: 'absolute',
+                left: 0,
+                right: 0,
+                top: 0,
+                height: `${navPillStyle.height}px`,
+                transform: `translateY(${navPillStyle.top}px)`,
+                background: 'rgba(255, 255, 255, 0.08)',
+                border: '1px solid rgba(255, 255, 255, 0.12)',
                 borderRadius: '8px',
-                border: 'none',
-                background: activeTab === 'settings' ? 'rgba(255, 255, 255, 0.08)' : 'transparent',
-                color: activeTab === 'settings' ? '#fff' : 'var(--text-secondary)',
-                fontWeight: activeTab === 'settings' ? '700' : '500',
-                fontSize: '0.85rem',
-                cursor: 'pointer',
-                textAlign: 'left',
-                transition: 'all 0.2s ease',
+                transition: 'transform 0.3s cubic-bezier(0.25, 1, 0.5, 1), height 0.2s ease',
+                pointerEvents: 'none',
+                zIndex: 1,
+                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
               }}
-            >
-              <Settings size={16} />
-              <span>Settings</span>
-            </button>
+            />
 
-            <button
-              onClick={() => {
-                setActiveTab('interactions');
-                setErrorMsg('');
-                setSuccessMsg('');
-              }}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                width: '100%',
-                padding: '10px 12px',
-                borderRadius: '8px',
-                border: 'none',
-                background: activeTab === 'interactions' ? 'rgba(255, 255, 255, 0.08)' : 'transparent',
-                color: activeTab === 'interactions' ? '#fff' : 'var(--text-secondary)',
-                fontWeight: activeTab === 'interactions' ? '700' : '500',
-                fontSize: '0.85rem',
-                cursor: 'pointer',
-                textAlign: 'left',
-                transition: 'all 0.2s ease',
-              }}
-            >
-              <MessageSquare size={16} />
-              <span>Interactions</span>
-            </button>
+            {navTabs.map((tab) => {
+              const IconComp = tab.icon;
+              const isActive = activeTab === tab.id;
+              const isLocked = tab.isUltra && plan !== 'ultra' && !isAdmin;
 
-            <button
-              onClick={() => {
-                setActiveTab('subscription');
-                setErrorMsg('');
-                setSuccessMsg('');
-              }}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                width: '100%',
-                padding: '10px 12px',
-                borderRadius: '8px',
-                border: 'none',
-                background: activeTab === 'subscription' ? 'rgba(255, 255, 255, 0.08)' : 'transparent',
-                color: activeTab === 'subscription' ? '#fff' : 'var(--text-secondary)',
-                fontWeight: activeTab === 'subscription' ? '700' : '500',
-                fontSize: '0.85rem',
-                cursor: 'pointer',
-                textAlign: 'left',
-                transition: 'all 0.2s ease',
-              }}
-            >
-              <CreditCard size={16} />
-              <span>Manage Subscription</span>
-            </button>
-
-            {isAdmin && (
-              <button
-                onClick={() => {
-                  setActiveTab('users');
-                  setErrorMsg('');
-                  setSuccessMsg('');
-                }}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px',
-                  width: '100%',
-                  padding: '10px 12px',
-                  borderRadius: '8px',
-                  border: 'none',
-                  background: activeTab === 'users' ? 'rgba(255, 255, 255, 0.08)' : 'transparent',
-                  color: activeTab === 'users' ? '#fff' : 'var(--text-secondary)',
-                  fontWeight: activeTab === 'users' ? '700' : '500',
-                  fontSize: '0.85rem',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  transition: 'all 0.2s ease',
-                }}
-              >
-                <Users size={16} />
-                <span>View Users</span>
-              </button>
-            )}
+              return (
+                <button
+                  key={tab.id}
+                  ref={(el) => (navItemRefs.current[tab.id] = el)}
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    setErrorMsg('');
+                    setSuccessMsg('');
+                  }}
+                  style={{
+                    position: 'relative',
+                    zIndex: 2,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    background: 'transparent',
+                    color: isActive ? '#ffffff' : isLocked ? '#777788' : 'var(--text-secondary)',
+                    fontWeight: isActive ? '700' : '500',
+                    fontSize: '0.85rem',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    opacity: isLocked && !isActive ? 0.65 : 1,
+                    transition: 'all 0.25s ease',
+                  }}
+                >
+                  <IconComp size={16} color={isActive ? '#ffffff' : isLocked ? '#666677' : 'var(--text-secondary)'} style={{ transition: 'color 0.25s ease' }} />
+                  <span>{tab.label}</span>
+                  {isLocked && <Lock size={12} color="#777788" style={{ marginLeft: 'auto', flexShrink: 0 }} />}
+                </button>
+              );
+            })}
           </nav>
         </div>
 
@@ -679,6 +917,9 @@ export default function Dashboard({ user, onSignOut }) {
                 {activeTab === 'settings' && 'Account Settings'}
                 {activeTab === 'interactions' && 'Jorgius Interactions'}
                 {activeTab === 'subscription' && 'Manage Subscription'}
+                {activeTab === 'invite' && 'Invite Users & Referrals'}
+                {activeTab === 'support' && 'Help & Support'}
+                {activeTab === 'integrations' && 'Custom Integrations'}
                 {activeTab === 'users' && 'Admin User Management'}
               </h2>
             </div>
@@ -752,19 +993,19 @@ export default function Dashboard({ user, onSignOut }) {
                         
                         {/* ONLY Admin can select plan via dropdown. Regular users must subscribe */}
                         {isAdmin ? (
-                          <select
+                          <CustomSelect
                             value={plan}
-                            onChange={(e) => setPlan(e.target.value)}
-                            className="form-input"
-                            style={{ width: '100%', userSelect: 'auto' }}
-                          >
-                            <option value="demo">Free Demo Plan</option>
-                            <option value="pro">Pro Unlimited Plan ($4.99/mo)</option>
-                          </select>
+                            onChange={(val) => setPlan(val)}
+                            options={[
+                              { value: 'demo', label: 'Free Demo Plan' },
+                              { value: 'pro', label: 'Pro Unlimited Plan ($0.99/mo)' },
+                              { value: 'ultra', label: 'Jorgius Ultra Plan ($4.99/mo)' },
+                            ]}
+                          />
                         ) : (
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}>
                             <span style={{ fontSize: '0.9rem', fontWeight: '700', color: '#fff' }}>
-                              {plan === 'pro' ? 'Pro Unlimited Plan ($4.99/mo)' : 'Free Demo Plan'}
+                              {plan === 'ultra' ? 'Ultra Premium Plan ($4.99/mo)' : plan === 'pro' ? 'Pro Unlimited Plan ($0.99/mo)' : 'Free Demo Plan'}
                             </span>
                             {plan === 'demo' && (
                               <button
@@ -798,12 +1039,12 @@ export default function Dashboard({ user, onSignOut }) {
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px', borderRadius: '8px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}>
                           <span style={{ color: 'var(--text-secondary)' }}>Privilege Level</span>
-                          <strong style={{ color: '#fff' }}>{isAdmin ? 'View all users' : plan === 'pro' ? 'Unlimited Pro Access' : 'Demo Mode'}</strong>
+                          <strong style={{ color: '#fff' }}>{isAdmin ? 'View all users' : plan === 'ultra' ? 'Ultra VIP Access' : plan === 'pro' ? 'Unlimited Pro Access' : 'Demo Mode'}</strong>
                         </div>
                         
                         <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px', borderRadius: '8px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}>
                           <span style={{ color: 'var(--text-secondary)' }}>Support Priority</span>
-                          <strong style={{ color: '#fff' }}>{plan === 'pro' ? 'Instant Priority' : 'Standard'}</strong>
+                          <strong style={{ color: '#fff' }}>{(plan === 'pro' || plan === 'ultra' || isAdmin) ? 'Instant Priority' : 'Standard'}</strong>
                         </div>
                       </div>
                     </div>
@@ -903,19 +1144,18 @@ export default function Dashboard({ user, onSignOut }) {
                         <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: '6px' }}>
                           Assistant Talking Style (Personality Mode)
                         </label>
-                        <select
+                        <CustomSelect
                           value={assistantStyle}
-                          onChange={(e) => setAssistantStyle(e.target.value)}
-                          className="form-input"
-                          style={{ width: '100%', userSelect: 'auto', cursor: 'pointer' }}
-                        >
-                          <option value="default">Default (Normal, Friendly & Direct)</option>
-                          <option value="gangster">Gangster Mode (Street-Smart Slang)</option>
-                          <option value="short">Keep it Short (Ultra-Concise, Fewest Words)</option>
-                          <option value="executive">Executive (Formal & Professional)</option>
-                          <option value="genz">Gen Z Mode (Hype & Internet Slang)</option>
-                          <option value="sarcastic">Sarcastic (Playfully Witty)</option>
-                        </select>
+                          onChange={(val) => setAssistantStyle(val)}
+                          options={[
+                            { value: 'default', label: 'Default (Normal, Friendly & Direct)' },
+                            { value: 'gangster', label: 'Gangster Mode (Street-Smart Slang)' },
+                            { value: 'short', label: 'Keep it Short (Ultra-Concise, Fewest Words)' },
+                            { value: 'executive', label: 'Executive (Formal & Professional)' },
+                            { value: 'genz', label: 'Gen Z Mode (Hype & Internet Slang)' },
+                            { value: 'sarcastic', label: 'Sarcastic (Playfully Witty)' },
+                          ]}
+                        />
 
                       </div>
 
@@ -925,34 +1165,254 @@ export default function Dashboard({ user, onSignOut }) {
                     </form>
                   </div>
                 </TiltCard>
+              </div>
+            </div>
+          )}
 
 
-                {/* Help Form */}
+          {/* TAB: VOICE & PHONE CALLS (ULTRA EXCLUSIVE) */}
+          {activeTab === 'voice' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              
+              {/* Feature Banner Card */}
+              <TiltCard maxTilt={2}>
+                <div style={{ padding: '24px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                    <div style={{ padding: '10px', background: 'rgba(52, 211, 153, 0.1)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Phone size={22} color="#34d399" />
+                    </div>
+                    <div>
+                      <h3 style={{ fontSize: '1.15rem', fontWeight: '800', color: '#fff' }}>
+                        Live Voice AI & Inbound Phone Calls
+                      </h3>
+                      <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                        Call Jorgius anytime over the phone to talk, check emails, listen to calendar agenda, or ask questions in real-time.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </TiltCard>
+
+              {/* Ultra Gating Check */}
+              {plan !== 'ultra' && !isAdmin ? (
                 <TiltCard maxTilt={3}>
-                  <div style={{ padding: '24px' }}>
-                    <h3 style={{ fontSize: '1rem', fontWeight: '700', marginBottom: '16px', color: '#fff', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '10px' }}>
-                      Help & Support
+                  <div style={{ padding: '32px 24px', textAlign: 'center', background: 'linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                    <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+                      <Crown size={24} color="#f59e0b" />
+                    </div>
+                    <h3 style={{ fontSize: '1.25rem', fontWeight: '800', color: '#fff', marginBottom: '8px' }}>
+                      Ultra Exclusive Feature
                     </h3>
-
-                    <form onSubmit={handleSendHelp} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                      <textarea
-                        placeholder="Need help or found a bug? Type your support message here..."
-                        value={helpMsg}
-                        onChange={(e) => setHelpMsg(e.target.value)}
-                        className="form-input"
-                        rows={5}
-                        style={{ width: '100%', resize: 'none' }}
-                        required
-                      />
-
-                      <button type="submit" className="btn-primary" disabled={loading} style={{ alignSelf: 'flex-end', fontSize: '0.85rem' }}>
-                        {loading ? <Loader2 size={14} className="animate-spin" /> : 'Send Help Ticket'}
-                      </button>
-                    </form>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', maxWidth: '520px', margin: '0 auto 24px auto', lineHeight: '1.5' }}>
+                      Live 2-way Voice AI phone calls are exclusive to <strong>Jorgius Ultra ($4.99/mo)</strong>. Upgrade your membership to get your personal Jorgius phone number.
+                    </p>
+                    <a
+                      href="https://buy.stripe.com/dRm5kD0uc8qIgkm1nVaVa03"
+                      className="btn-ultra"
+                      style={{ padding: '12px 28px', fontSize: '0.92rem', display: 'inline-flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}
+                    >
+                      <Crown size={15} fill="#000" />
+                      <span>Upgrade to Jorgius Ultra ($4.99/mo)</span>
+                    </a>
                   </div>
                 </TiltCard>
+              ) : (
+                /* Ultra / Admin Active Voice Controls */
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+                  
+                  {/* Phone Call Card */}
+                  <TiltCard maxTilt={3}>
+                    <div style={{ padding: '24px', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                          <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(52, 211, 153, 0.1)', border: '1px solid rgba(52, 211, 153, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Phone size={18} color="#34d399" />
+                          </div>
+                          <div>
+                            <h4 style={{ fontSize: '0.98rem', fontWeight: '700', color: '#fff' }}>Jorgius Live Phone Number</h4>
+                            <span style={{ fontSize: '0.75rem', color: '#34d399', fontWeight: '600' }}>● Active & Ready to Answer</span>
+                          </div>
+                        </div>
 
-              </div>
+                        <div style={{ background: 'rgba(255,255,255,0.03)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)', marginBottom: '16px', textAlign: 'center' }}>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>
+                            Direct Phone Number
+                          </div>
+                          <div style={{ fontSize: '1.4rem', fontWeight: '800', color: '#fff', letterSpacing: '0.05em', fontFamily: 'var(--font-heading)' }}>
+                            +1 (716) 670-2614
+                          </div>
+                        </div>
+
+                        <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '20px', lineHeight: '1.45' }}>
+                          Save this number to your iPhone/Android contacts. Call anytime to talk naturally with Jorgius, ask about your emails, check your calendar agenda, or send texts by voice.
+                        </p>
+                      </div>
+
+                      <a
+                        href="tel:+17166702614"
+                        className="btn-primary"
+                        style={{ width: '100%', padding: '12px', justifyContent: 'center', fontSize: '0.88rem', gap: '8px', textDecoration: 'none', background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}
+                      >
+                        <Phone size={16} />
+                        <span>Call +1 (716) 670-2614 Now</span>
+                      </a>
+                    </div>
+                  </TiltCard>
+
+                  {/* Capabilities Card */}
+                  <TiltCard maxTilt={3}>
+                    <div style={{ padding: '24px', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                      <div>
+                        <h4 style={{ fontSize: '0.98rem', fontWeight: '700', color: '#fff', marginBottom: '14px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '10px' }}>
+                          ⚡ What You Can Say On Calls
+                        </h4>
+                        <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                          <li style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                            <span style={{ color: '#34d399', fontWeight: '700' }}>•</span>
+                            <span><em>"What unread emails did I get today?"</em></span>
+                          </li>
+                          <li style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                            <span style={{ color: '#34d399', fontWeight: '700' }}>•</span>
+                            <span><em>"Read me my upcoming calendar agenda."</em></span>
+                          </li>
+                          <li style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                            <span style={{ color: '#34d399', fontWeight: '700' }}>•</span>
+                            <span><em>"Send a text message to Alex saying I will be there at 5."</em></span>
+                          </li>
+                          <li style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                            <span style={{ color: '#34d399', fontWeight: '700' }}>•</span>
+                            <span><em>"Switch topics anytime — Jorgius adapts instantly."</em></span>
+                          </li>
+                        </ul>
+                      </div>
+
+                      <div style={{ marginTop: '20px', padding: '12px', borderRadius: '10px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                        Powered by <strong>Vapi.ai Voice Infrastructure</strong> &amp; <strong>Gemini 2.0 Real-Time AI</strong> (&lt;500ms latency).
+                      </div>
+                    </div>
+                  </TiltCard>
+
+                </div>
+              )}
+
+            </div>
+          )}
+
+          {/* TAB: EMAIL ANALYSIS (ULTRA EXCLUSIVE) */}
+          {activeTab === 'email' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              
+              {/* Feature Banner Card */}
+              <TiltCard maxTilt={2}>
+                <div style={{ padding: '24px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                    <div style={{ padding: '10px', background: 'rgba(129, 140, 248, 0.1)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Mail size={22} color="#818cf8" />
+                    </div>
+                    <div>
+                      <h3 style={{ fontSize: '1.15rem', fontWeight: '800', color: '#fff' }}>
+                        Email Reading & AI Analysis
+                      </h3>
+                      <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                        Connect your Gmail and Outlook inboxes to get intelligent AI email digests and instant 2FA passcode alerts over iMessage.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Strict Read-Only Security Notice */}
+                  <div style={{ marginTop: '16px', padding: '14px', borderRadius: '12px', background: 'rgba(52, 211, 153, 0.05)', border: '1px solid rgba(52, 211, 153, 0.2)', display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                    <ShieldCheck size={18} color="#34d399" style={{ flexShrink: 0, marginTop: '2px' }} />
+                    <div style={{ fontSize: '0.8rem', color: '#cbd5e1', lineHeight: '1.5' }}>
+                      <strong style={{ color: '#34d399' }}>Read-Only Email Policy:</strong> Jorgius strictly reads and analyzes your incoming email messages to deliver instant text alerts to your iMessage thread. <strong style={{ color: '#fff' }}>No emails are ever composed or sent automatically.</strong>
+                    </div>
+                  </div>
+                </div>
+              </TiltCard>
+
+              {/* Ultra Plan Gated Check */}
+              {plan !== 'ultra' && !isAdmin ? (
+                <TiltCard maxTilt={3}>
+                  <div style={{ padding: '32px 24px', textAlign: 'center', background: 'linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                    <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+                      <Crown size={24} color="#f59e0b" />
+                    </div>
+                    <h3 style={{ fontSize: '1.25rem', fontWeight: '800', color: '#fff', marginBottom: '8px' }}>
+                      Ultra Exclusive Feature
+                    </h3>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', maxWidth: '520px', margin: '0 auto 24px auto', lineHeight: '1.5' }}>
+                      Email inbox integration, AI spam filtering, and 2FA verification passcode forwarding are exclusive to <strong>Jorgius Ultra ($4.99/mo)</strong>. Upgrade your membership to connect your mailboxes.
+                    </p>
+                    <a
+                      href="https://buy.stripe.com/dRm5kD0uc8qIgkm1nVaVa03"
+                      className="btn-ultra"
+                      style={{ padding: '12px 28px', fontSize: '0.92rem', display: 'inline-flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}
+                    >
+                      <Crown size={15} fill="#000" />
+                      <span>Upgrade to Jorgius Ultra ($4.99/mo)</span>
+                    </a>
+                  </div>
+                </TiltCard>
+              ) : (
+                /* Ultra / Admin Active Connect Section */
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+                  
+                  {/* Connect Gmail Account */}
+                  <TiltCard maxTilt={3}>
+                    <div style={{ padding: '24px', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                          <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(66, 133, 244, 0.1)', border: '1px solid rgba(66, 133, 244, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', color: '#4285F4', fontSize: '1.1rem' }}>G</div>
+                          <div>
+                            <h4 style={{ fontSize: '0.98rem', fontWeight: '700', color: '#fff' }}>Google Gmail Integration</h4>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Read-Only Inbox Analysis</span>
+                          </div>
+                        </div>
+                        <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '20px', lineHeight: '1.45' }}>
+                          Authorize Jorgius to read unread Gmail messages, extract 2FA codes, and summarize important emails for iMessage notifications.
+                        </p>
+                      </div>
+                      <a
+                        href="https://notification-assistant.onrender.com/auth/login"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="btn-primary"
+                        style={{ width: '100%', padding: '12px', justifyContent: 'center', fontSize: '0.88rem', gap: '8px', textDecoration: 'none', background: 'linear-gradient(135deg, #4285F4 0%, #34a853 100%)' }}
+                      >
+                        <span>Connect Google Account</span>
+                      </a>
+                    </div>
+                  </TiltCard>
+
+                  {/* Connect Outlook Account */}
+                  <TiltCard maxTilt={3}>
+                    <div style={{ padding: '24px', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                          <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(0, 120, 212, 0.1)', border: '1px solid rgba(0, 120, 212, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', color: '#0078D4', fontSize: '1.1rem' }}>O</div>
+                          <div>
+                            <h4 style={{ fontSize: '0.98rem', fontWeight: '700', color: '#fff' }}>Outlook / Office 365 Integration</h4>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Read-Only Inbox Analysis</span>
+                          </div>
+                        </div>
+                        <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '20px', lineHeight: '1.45' }}>
+                          Connect your Microsoft Outlook or Office 365 inbox for automated unread email polling and instant text alerts.
+                        </p>
+                      </div>
+                      <a
+                        href="https://notification-assistant.onrender.com/auth/microsoft/login"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="btn-primary"
+                        style={{ width: '100%', padding: '12px', justifyContent: 'center', fontSize: '0.88rem', gap: '8px', textDecoration: 'none', background: 'linear-gradient(135deg, #0078d4 0%, #005a9e 100%)' }}
+                      >
+                        <span>Connect Outlook Account</span>
+                      </a>
+                    </div>
+                  </TiltCard>
+
+                </div>
+              )}
+
             </div>
           )}
 
@@ -980,47 +1440,68 @@ export default function Dashboard({ user, onSignOut }) {
                           border: (plan === 'pro' || plan === 'ultra') ? '1px solid rgba(34, 197, 94, 0.4)' : '1px solid rgba(255, 255, 255, 0.2)',
                           color: (plan === 'pro' || plan === 'ultra') ? '#4ade80' : '#fff'
                         }}>
-                          {plan === 'ultra' ? 'ACTIVE ($19.99/mo)' : plan === 'pro' ? 'ACTIVE ($4.99/mo)' : 'LIMITED DEMO'}
+                          {plan === 'ultra' ? 'ACTIVE ($4.99/mo)' : plan === 'pro' ? 'ACTIVE ($0.99/mo)' : 'LIMITED DEMO'}
                         </span>
                       </h3>
                     </div>
 
-                    <div>
-                      {plan === 'pro' || plan === 'ultra' ? (
-                        <button
-                          onClick={() => setShowCancelModal(true)}
-                          className="btn-secondary"
-                          style={{ color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.3)', fontSize: '0.85rem' }}
-                        >
-                          <XCircle size={14} /> Cancel Membership
-                        </button>
-                      ) : (
-                        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+                      {plan === 'demo' && (
+                        <>
                           <button
                             onClick={() => setShowCheckoutModal(true)}
                             className="btn-primary"
-                            style={{ fontSize: '0.88rem', padding: '10px 20px', gap: '8px' }}
+                            style={{ fontSize: '0.85rem', padding: '9px 16px', gap: '8px' }}
                           >
-                            <Zap size={16} /> Upgrade to Pro ($4.99/mo)
+                            <Zap size={15} /> Upgrade to Pro ($0.99/mo)
                           </button>
                           <a
-                            href="https://buy.stripe.com/5kQ9ATccU5ew4BE9UraVa01"
-                            className="btn-primary"
-                            style={{
-                              fontSize: '0.88rem',
-                              padding: '10px 20px',
-                              gap: '8px',
-                              background: 'linear-gradient(90deg, #3b82f6, #8b5cf6)',
-                              border: 'none',
-                              textDecoration: 'none',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                            }}
+                            href="https://buy.stripe.com/dRm5kD0uc8qIgkm1nVaVa03"
+                            className="btn-ultra"
+                            style={{ fontSize: '0.85rem', padding: '9px 16px' }}
                           >
-                            <Zap size={16} fill="#000" /> Upgrade to Ultra ($19.99/mo)
+                            <Crown size={15} fill="#000" /> Upgrade to Ultra ($4.99/mo)
                           </a>
-                        </div>
+                        </>
+                      )}
+
+                      {plan === 'pro' && (
+                        <>
+                          <a
+                            href="https://buy.stripe.com/dRm5kD0uc8qIgkm1nVaVa03"
+                            className="btn-ultra"
+                            style={{ fontSize: '0.85rem', padding: '9px 16px' }}
+                          >
+                            <Crown size={15} fill="#000" /> Upgrade to Ultra ($4.99/mo)
+                          </a>
+                          <button
+                            onClick={() => setShowCancelModal(true)}
+                            className="btn-secondary"
+                            style={{ color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.3)', fontSize: '0.85rem', padding: '9px 16px' }}
+                          >
+                            <XCircle size={14} /> Downgrade to Demo / Cancel
+                          </button>
+                        </>
+                      )}
+
+                      {plan === 'ultra' && (
+                        <>
+                          <button
+                            onClick={handleDowngradeToPro}
+                            className="btn-secondary"
+                            disabled={loading}
+                            style={{ fontSize: '0.85rem', padding: '9px 16px', gap: '8px' }}
+                          >
+                            {loading ? <Loader2 size={14} className="animate-spin" /> : <><Zap size={14} /> Downgrade to Pro ($0.99/mo)</>}
+                          </button>
+                          <button
+                            onClick={() => setShowCancelModal(true)}
+                            className="btn-secondary"
+                            style={{ color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.3)', fontSize: '0.85rem', padding: '9px 16px' }}
+                          >
+                            <XCircle size={14} /> Downgrade to Demo / Cancel
+                          </button>
+                        </>
                       )}
                     </div>
                   </div>
@@ -1029,9 +1510,10 @@ export default function Dashboard({ user, onSignOut }) {
                     <div>
                       <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'block' }}>Billing Cycle</span>
                       <strong style={{ fontSize: '0.92rem', color: '#fff' }}>
-                        {plan === 'ultra' ? 'Monthly ($19.99/month)' : plan === 'pro' ? 'Monthly ($4.99/month)' : 'Free Tier'}
+                        {plan === 'ultra' ? 'Monthly ($9.99/month)' : plan === 'pro' ? 'Monthly ($4.99/month)' : 'Free Tier'}
                       </strong>
                     </div>
+
 
                     <div>
                       <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'block' }}>iMessage AI Responses</span>
@@ -1046,6 +1528,83 @@ export default function Dashboard({ user, onSignOut }) {
                         {plan === 'ultra' ? 'VIP 24/7 SLA' : plan === 'pro' ? 'Included' : 'Standard'}
                       </strong>
                     </div>
+                  </div>
+                </div>
+              </TiltCard>
+
+              {/* Lifetime & Monthly iMessage Activity Breakdown Card */}
+              <TiltCard maxTilt={2}>
+                <div style={{ padding: '24px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '12px' }}>
+                    <h3 style={{ fontSize: '1.05rem', fontWeight: '700', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Activity size={18} color="#fff" /> Lifetime & Monthly iMessage Analytics
+                    </h3>
+                    <span style={{ fontSize: '0.75rem', background: 'rgba(16, 185, 129, 0.12)', border: '1px solid rgba(16, 185, 129, 0.3)', color: '#34d399', padding: '3px 10px', borderRadius: '20px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#34d399' }}></span> Real-Time Tracker Active
+                    </span>
+                  </div>
+
+                  {/* Summary Grid */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '14px', marginBottom: '24px' }}>
+                    <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                      <span style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Lifetime iMessages</span>
+                      <strong style={{ fontSize: '1.35rem', color: '#fff', fontWeight: '800' }}>
+                        {userMessageStats.lifetimeTotal}
+                      </strong>
+                      <span style={{ fontSize: '0.7rem', color: '#10b981', display: 'block', marginTop: '2px' }}>Total Handled</span>
+                    </div>
+
+                    <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                      <span style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>User Prompts Sent</span>
+                      <strong style={{ fontSize: '1.35rem', color: '#fff', fontWeight: '800' }}>
+                        {userMessageStats.userSent}
+                      </strong>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', display: 'block', marginTop: '2px' }}>Incoming to Jorgius</span>
+                    </div>
+
+                    <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                      <span style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>AI Responses</span>
+                      <strong style={{ fontSize: '1.35rem', color: '#fff', fontWeight: '800' }}>
+                        {userMessageStats.aiResponses}
+                      </strong>
+                      <span style={{ fontSize: '0.7rem', color: '#38bdf8', display: 'block', marginTop: '2px' }}>Dispatched via iMessage</span>
+                    </div>
+
+                    <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                      <span style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Avg Response Speed</span>
+                      <strong style={{ fontSize: '1.35rem', color: '#a78bfa', fontWeight: '800' }}>0.8s</strong>
+                      <span style={{ fontSize: '0.7rem', color: '#a78bfa', display: 'block', marginTop: '2px' }}>Ultra-Fast AI Pipeline</span>
+                    </div>
+                  </div>
+
+                  {/* Monthly Breakdown Table */}
+                  <h4 style={{ fontSize: '0.88rem', fontWeight: '700', color: '#fff', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <BarChart3 size={15} color="#fff" /> Monthly Usage Breakdown
+                  </h4>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {userMessageStats.monthlyBreakdown.map((m, idx) => (
+                      <div key={idx} style={{ background: 'rgba(255,255,255,0.02)', padding: '12px 16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: '130px' }}>
+                          <span style={{ fontSize: '0.85rem', fontWeight: '600', color: '#fff' }}>{m.month}</span>
+                          {idx === 0 && <span style={{ fontSize: '0.68rem', background: 'rgba(255, 255, 255, 0.1)', color: '#fff', padding: '1px 6px', borderRadius: '4px' }}>Current</span>}
+                        </div>
+                        
+                        <div style={{ flex: 1, minWidth: '150px', maxWidth: '300px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                            <span>{m.count} Messages</span>
+                            <span>{plan === 'demo' ? `${Math.min(m.count, 10)}/10 Trial Limit` : 'Unlimited'}</span>
+                          </div>
+                          <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.08)', borderRadius: '3px', overflow: 'hidden' }}>
+                            <div style={{ width: `${plan === 'demo' ? Math.min((m.count / 10) * 100, 100) : Math.min((m.count / 300) * 100, 100)}%`, height: '100%', background: idx === 0 ? 'linear-gradient(90deg, #fff 0%, #38bdf8 100%)' : 'rgba(255,255,255,0.3)', borderRadius: '3px' }} />
+                          </div>
+                        </div>
+
+                        <div style={{ fontSize: '0.82rem', fontWeight: '700', color: '#fff', minWidth: '80px', textAlign: 'right' }}>
+                          {m.count} Total
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </TiltCard>
@@ -1069,7 +1628,7 @@ export default function Dashboard({ user, onSignOut }) {
                     <div style={{ background: 'rgba(255,255,255,0.03)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)', marginBottom: '24px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                         <span>Jorgius Pro Monthly</span>
-                        <strong style={{ color: '#fff' }}>$4.99 / mo</strong>
+                        <strong style={{ color: '#fff' }}>$0.99 / mo</strong>
                       </div>
                       <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
                         Processed securely via Stripe Official Subscription Checkout.
@@ -1083,7 +1642,7 @@ export default function Dashboard({ user, onSignOut }) {
                         disabled={loading}
                         style={{ width: '100%', padding: '12px', fontSize: '0.92rem', justifyContent: 'center' }}
                       >
-                        {loading ? <Loader2 size={16} className="animate-spin" /> : 'Confirm & Proceed to Stripe Payment →'}
+                        {loading ? <Loader2 size={16} className="animate-spin" /> : 'Confirm & Proceed to Stripe Payment'}
                       </button>
 
                       <button
@@ -1110,7 +1669,7 @@ export default function Dashboard({ user, onSignOut }) {
                     </p>
 
                     <div style={{ background: 'rgba(239, 68, 68, 0.05)', padding: '14px', borderRadius: '10px', border: '1px solid rgba(239, 68, 68, 0.2)', marginBottom: '20px', fontSize: '0.78rem', color: '#f87171' }}>
-                      ℹ️ Your subscription status will update immediately and future recurring billing will stop.
+                      Your subscription status will update immediately and future recurring billing will stop.
                     </div>
 
                     <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
@@ -1128,10 +1687,234 @@ export default function Dashboard({ user, onSignOut }) {
             </div>
           )}
 
+          {/* TAB: INVITE USERS & REFERRALS */}
+          {activeTab === 'invite' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              
+              {/* Promo Banner Card */}
+              <TiltCard maxTilt={2}>
+                <div style={{ padding: '24px', background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '4px' }}>
+                    <div style={{ padding: '10px', background: 'rgba(255,255,255,0.1)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Gift size={22} color="#fff" />
+                    </div>
+                    <div>
+                      <h3 style={{ fontSize: '1.15rem', fontWeight: '800', color: '#fff' }}>
+                        Invite Friends, Get Free Months!
+                      </h3>
+                      <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                        For every friend who signs up for a paid plan using your referral, you get <strong>1 Month Free</strong> of Jorgius!
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </TiltCard>
+
+              {/* Grid with iMessage Invite and Link Copy */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+                
+                {/* Send iMessage Invite Card */}
+                <TiltCard maxTilt={3}>
+                  <div style={{ padding: '24px', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                    <div>
+                      <h3 style={{ fontSize: '1rem', fontWeight: '700', marginBottom: '14px', color: '#fff', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Send size={16} color="#fff" /> Send Instant iMessage Invite
+                      </h3>
+                      <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '16px' }}>
+                        Enter a friend's phone number below. Jorgius will text them an iMessage with your personal signup link.
+                      </p>
+
+                      <form onSubmit={handleSendUserInvite} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: '6px' }}>
+                            Friend's iMessage Phone Number
+                          </label>
+                          <input
+                            type="tel"
+                            placeholder="(555) 000-0000"
+                            value={invitePhone}
+                            onChange={(e) => setInvitePhone(formatPhoneNumber(e.target.value))}
+                            className="form-input"
+                            style={{ width: '100%', fontSize: '1rem' }}
+                            maxLength={14}
+                            required
+                          />
+                        </div>
+
+                        <button type="submit" className="btn-primary" disabled={inviteSending} style={{ width: '100%', padding: '10px', fontSize: '0.85rem', marginTop: '4px', gap: '8px' }}>
+                          {inviteSending ? <Loader2 size={14} className="animate-spin" /> : <><Send size={14} /> Send iMessage Invite</>}
+                        </button>
+                      </form>
+                    </div>
+                  </div>
+                </TiltCard>
+
+                {/* Personal Referral Link Card */}
+                <TiltCard maxTilt={3}>
+                  <div style={{ padding: '24px', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                    <div>
+                      <h3 style={{ fontSize: '1rem', fontWeight: '700', marginBottom: '14px', color: '#fff', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Copy size={16} color="#fff" /> Copy Referral Link
+                      </h3>
+                      <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '16px' }}>
+                        Share your unique referral link anywhere to give friends access to Jorgius.
+                      </p>
+
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <input
+                          type="text"
+                          readOnly
+                          value={`https://jorgius.com/?ref=${user?.id ? user.id.slice(0, 8) : 'vip'}`}
+                          className="form-input"
+                          style={{ width: '100%', fontSize: '0.82rem', background: 'rgba(255,255,255,0.03)' }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(`https://jorgius.com/?ref=${user?.id ? user.id.slice(0, 8) : 'vip'}`);
+                            setCopiedRef(true);
+                            setTimeout(() => setCopiedRef(false), 3000);
+                          }}
+                          className="btn-secondary"
+                          style={{ padding: '10px 14px', fontSize: '0.82rem', whiteSpace: 'nowrap', gap: '6px' }}
+                        >
+                          {copiedRef ? <><Check size={14} color="#4ade80" /> Copied!</> : <><Copy size={14} /> Copy</>}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div style={{ marginTop: '20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', background: 'rgba(255,255,255,0.02)', padding: '12px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                      <div>
+                        <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', display: 'block' }}>Invites Sent</span>
+                        <strong style={{ fontSize: '1rem', color: '#fff' }}>0</strong>
+                      </div>
+                      <div>
+                        <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', display: 'block' }}>Free Months Earned</span>
+                        <strong style={{ fontSize: '1rem', color: '#4ade80' }}>0 Months</strong>
+                      </div>
+                    </div>
+                  </div>
+                </TiltCard>
+
+              </div>
+            </div>
+          )}
+
+          {/* TAB 5: HELP & SUPPORT */}
+          {activeTab === 'support' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <TiltCard maxTilt={3}>
+                <div style={{ padding: '24px' }}>
+                  <h3 style={{ fontSize: '1rem', fontWeight: '700', marginBottom: '16px', color: '#fff', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '10px' }}>
+                    Help & Support
+                  </h3>
+
+                  <form onSubmit={handleSendHelp} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <textarea
+                      placeholder="Need help or found a bug? Type your support message here..."
+                      value={helpMsg}
+                      onChange={(e) => setHelpMsg(e.target.value)}
+                      className="form-input"
+                      rows={5}
+                      style={{ width: '100%', resize: 'none' }}
+                      required
+                    />
+
+                    <button type="submit" className="btn-primary" disabled={loading} style={{ alignSelf: 'flex-end', fontSize: '0.85rem' }}>
+                      {loading ? <Loader2 size={14} className="animate-spin" /> : 'Send Help Ticket'}
+                    </button>
+                  </form>
+                </div>
+              </TiltCard>
+            </div>
+          )}
+
+          {/* TAB 6: CUSTOM INTEGRATIONS */}
+          {activeTab === 'integrations' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <TiltCard maxTilt={3}>
+                <div style={{ padding: '24px' }}>
+                  <h3 style={{ fontSize: '1rem', fontWeight: '700', marginBottom: '16px', color: '#fff', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Cpu size={18} /> Request Custom Integration
+                  </h3>
+
+                  {plan !== 'ultra' && (
+                    <div style={{ background: 'rgba(239, 68, 68, 0.08)', padding: '14px', borderRadius: '10px', border: '1px solid rgba(239, 68, 68, 0.2)', marginBottom: '20px', fontSize: '0.82rem', color: '#f87171', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <AlertCircle size={16} />
+                      <span>Custom Integrations requests are exclusive to <strong>Jorgius Ultra</strong> members. Please upgrade to Ultra plan to request custom developer hookups.</span>
+                    </div>
+                  )}
+
+                  <form onSubmit={handleSendIntegrationRequest} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                      Describe the service, API, or custom flow you want Jorgius to integrate with:
+                    </label>
+                    <textarea
+                      placeholder={plan === 'ultra' ? "Describe the integration you need (e.g. connecting to Slack, custom CRM webhook, or specific stock API)..." : "Upgrade to Jorgius Ultra plan to request custom integrations."}
+                      value={integrationMsg}
+                      onChange={(e) => setIntegrationMsg(e.target.value)}
+                      className="form-input"
+                      rows={6}
+                      style={{ width: '100%', resize: 'none' }}
+                      required
+                      disabled={plan !== 'ultra'}
+                    />
+
+                    <button
+                      type="submit"
+                      className="btn-primary"
+                      disabled={loading || plan !== 'ultra'}
+                      style={{
+                        alignSelf: 'flex-end',
+                        fontSize: '0.85rem',
+                        background: plan !== 'ultra' ? 'rgba(255, 255, 255, 0.04)' : undefined,
+                        borderColor: plan !== 'ultra' ? 'rgba(255, 255, 255, 0.08)' : undefined,
+                        color: plan !== 'ultra' ? 'rgba(255,255,255,0.2)' : undefined,
+                        cursor: plan !== 'ultra' ? 'not-allowed' : 'pointer'
+                      }}
+                    >
+                      {loading ? <Loader2 size={14} className="animate-spin" /> : 'Request Custom Integration'}
+                    </button>
+                  </form>
+                </div>
+              </TiltCard>
+            </div>
+          )}
+
           {/* TAB 4: ADMIN VIEW USERS & MESSAGING */}
           {activeTab === 'users' && isAdmin && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               
+              {/* Admin iMessage Invite Card */}
+              <TiltCard maxTilt={2}>
+                <div style={{ padding: '24px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                  <h3 style={{ fontSize: '1.05rem', fontWeight: '700', color: '#fff', marginBottom: '12px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <UserPlus size={18} color="#fff" /> Invite User to Sign Up & Create Account via iMessage
+                  </h3>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '16px' }}>
+                    Send an official iMessage invitation from Jorgius with the signup link directly to a new user's phone number.
+                  </p>
+
+                  <form onSubmit={handleSendAdminInvite} style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+                    <div style={{ flex: 1, minWidth: '240px' }}>
+                      <input
+                        type="tel"
+                        placeholder="Enter phone number (555) 000-0000"
+                        value={adminInvitePhone}
+                        onChange={(e) => setAdminInvitePhone(formatPhoneNumber(e.target.value))}
+                        className="form-input"
+                        style={{ width: '100%', fontSize: '0.92rem' }}
+                        maxLength={14}
+                        required
+                      />
+                    </div>
+                    <button type="submit" className="btn-primary" disabled={inviteSending} style={{ fontSize: '0.85rem', padding: '10px 20px', gap: '8px' }}>
+                      {inviteSending ? <Loader2 size={14} className="animate-spin" /> : <><Send size={14} /> Send iMessage Signup Invite</>}
+                    </button>
+                  </form>
+                </div>
+              </TiltCard>
+
               {/* Admin Direct Message Sender Card */}
               <TiltCard maxTilt={2}>
                 <div style={{ padding: '24px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
@@ -1145,23 +1928,22 @@ export default function Dashboard({ user, onSignOut }) {
                         <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: '6px' }}>
                           Select Registered Recipient
                         </label>
-                        <select
+                        <CustomSelect
                           value={adminMsgPhone}
-                          onChange={(e) => setAdminMsgPhone(e.target.value)}
-                          className="form-input"
-                          style={{ width: '100%', userSelect: 'auto' }}
-                        >
-                          <option value="">-- Choose Authorized User --</option>
-                          {allUsers.map((u) => {
-                            const p = u.user_metadata?.phone_number || '';
-                            const un = u.user_metadata?.username || u.email;
-                            return (
-                              <option key={u.id} value={p || u.email}>
-                                {un} ({p || u.email})
-                              </option>
-                            );
-                          })}
-                        </select>
+                          onChange={(val) => setAdminMsgPhone(val)}
+                          placeholder="-- Choose Authorized User --"
+                          options={[
+                            { value: '', label: '-- Choose Authorized User --' },
+                            ...allUsers.map((u) => {
+                              const p = u.user_metadata?.phone_number || '';
+                              const un = u.user_metadata?.username || u.email;
+                              return {
+                                value: p || u.email,
+                                label: `${un} (${p || u.email})`,
+                              };
+                            })
+                          ]}
+                        />
                       </div>
 
                       <div>
@@ -1246,15 +2028,15 @@ export default function Dashboard({ user, onSignOut }) {
                         <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: '6px' }}>
                           Plan Role
                         </label>
-                        <select
+                        <CustomSelect
                           value={editPlan}
-                          onChange={(e) => setEditPlan(e.target.value)}
-                          className="form-input"
-                          style={{ width: '100%', userSelect: 'auto' }}
-                        >
-                          <option value="demo">Demo Plan</option>
-                          <option value="pro">Pro Plan</option>
-                        </select>
+                          onChange={(val) => setEditPlan(val)}
+                          options={[
+                            { value: 'demo', label: 'Demo Plan' },
+                            { value: 'pro', label: 'Pro Plan' },
+                            { value: 'ultra', label: 'Ultra Plan' },
+                          ]}
+                        />
                       </div>
 
                       <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '10px' }}>
@@ -1342,6 +2124,11 @@ export default function Dashboard({ user, onSignOut }) {
               </div>
 
             </div>
+          )}
+
+          {/* TAB: ADMIN SYSTEM STATUS EDITOR */}
+          {activeTab === 'status' && isAdmin && (
+            <AdminPanel embedded={true} />
           )}
 
         </div>

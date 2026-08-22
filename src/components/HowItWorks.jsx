@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import TiltCard from './TiltCard';
-import { Send, CheckCircle, Loader2, Zap, MessageSquare, AlertCircle } from 'lucide-react';
+import { Send, CheckCircle, Loader2, Zap, Crown, MessageSquare, AlertCircle } from 'lucide-react';
+
 
 const getWeb3FormsKey = () => atob("N2FhNTQxMzMtYWMzMS00MTY3LWI3N2YtY2MzOGRkNzNhMjIw");
 
@@ -19,7 +20,9 @@ export default function HowItWorks({ planMode = 'demo', onPlanChange }) {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const isDemo = planMode === 'demo';
   const isPro = planMode === 'pro';
+  const isUltra = planMode === 'ultra';
 
   const handlePhoneInput = (e) => {
     const formatted = formatPhoneNumber(e.target.value);
@@ -39,7 +42,8 @@ export default function HowItWorks({ planMode = 'demo', onPlanChange }) {
     setLoading(true);
     setErrorMsg('');
 
-    const payloadSubject = isPro ? `Jorgius Pro: ${phoneNumber}` : `Jorgius Demo: ${phoneNumber}`;
+    const planLabel = isUltra ? 'Ultra' : isPro ? 'Pro' : 'Demo';
+    const payloadSubject = `Jorgius ${planLabel}: ${phoneNumber}`;
 
     try {
       const response = await fetch('https://api.web3forms.com/submit', {
@@ -84,7 +88,7 @@ export default function HowItWorks({ planMode = 'demo', onPlanChange }) {
               borderRadius: '9999px',
               border: '1px solid rgba(255, 255, 255, 0.12)',
               marginBottom: '24px',
-              width: '210px',
+              width: '290px',
             }}
           >
             {/* Sliding Pill Background Indicator */}
@@ -93,8 +97,8 @@ export default function HowItWorks({ planMode = 'demo', onPlanChange }) {
                 position: 'absolute',
                 top: '4px',
                 bottom: '4px',
-                left: isPro ? 'calc(50% + 2px)' : '4px',
-                width: 'calc(50% - 6px)',
+                left: isDemo ? '4px' : isPro ? 'calc(33.3% + 2px)' : 'calc(66.6% + 2px)',
+                width: 'calc(33.3% - 6px)',
                 background: '#ffffff',
                 borderRadius: '9999px',
                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -119,7 +123,7 @@ export default function HowItWorks({ planMode = 'demo', onPlanChange }) {
                 borderRadius: '9999px',
                 border: 'none',
                 background: 'transparent',
-                color: !isPro ? '#07080a' : 'var(--text-secondary)',
+                color: isDemo ? '#07080a' : 'var(--text-secondary)',
                 fontWeight: '700',
                 fontSize: '0.82rem',
                 cursor: 'pointer',
@@ -130,7 +134,7 @@ export default function HowItWorks({ planMode = 'demo', onPlanChange }) {
                 gap: '6px',
               }}
             >
-              <MessageSquare size={13} color={!isPro ? '#07080a' : 'var(--text-secondary)'} />
+              <MessageSquare size={13} color={isDemo ? '#07080a' : 'var(--text-secondary)'} />
               <span>Demo</span>
             </button>
 
@@ -164,19 +168,52 @@ export default function HowItWorks({ planMode = 'demo', onPlanChange }) {
               <Zap size={13} color={isPro ? '#07080a' : 'var(--text-secondary)'} />
               <span>Pro</span>
             </button>
+
+            {/* Ultra Button */}
+            <button
+              type="button"
+              onClick={() => {
+                setSubmitted(false);
+                setErrorMsg('');
+                if (onPlanChange) onPlanChange('ultra');
+              }}
+              style={{
+                position: 'relative',
+                zIndex: 2,
+                flex: 1,
+                padding: '6px 12px',
+                borderRadius: '9999px',
+                border: 'none',
+                background: 'transparent',
+                color: isUltra ? '#07080a' : 'var(--text-secondary)',
+                fontWeight: '700',
+                fontSize: '0.82rem',
+                cursor: 'pointer',
+                transition: 'color 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+              }}
+            >
+              <Crown size={13} color={isUltra ? '#07080a' : 'var(--text-secondary)'} />
+              <span>Ultra</span>
+            </button>
           </div>
 
           {!submitted ? (
             <>
               {/* Dynamic Title */}
               <h2 style={{ fontSize: '1.45rem', fontWeight: '800', fontFamily: 'var(--font-heading)', marginBottom: '8px' }}>
-                {isPro ? 'Activate Jorgius Pro' : 'Activate Jorgius Demo'}
+                {isUltra ? 'Activate Jorgius Ultra' : isPro ? 'Activate Jorgius Pro' : 'Activate Jorgius Demo'}
               </h2>
 
               {/* Dynamic Subtitle */}
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', marginBottom: '22px', lineHeight: '1.45' }}>
-                {isPro
-                  ? 'Enter your phone number below. Jorgius will send you a text message with a secure payment link to complete setup.'
+                {isUltra
+                  ? 'Enter your phone number below. Jorgius will send you a text message with a secure payment link to complete Ultra setup.'
+                  : isPro
+                  ? 'Enter your phone number below. Jorgius will send you a text message with a secure payment link to complete Pro setup.'
                   : 'Enter your phone number below. You will receive an activation text message from Jorgius instantly. You can upgrade to Pro at any time by asking Jorgius.'}
               </p>
 
@@ -205,7 +242,7 @@ export default function HowItWorks({ planMode = 'demo', onPlanChange }) {
                   ) : (
                     <>
                       <Send size={16} />
-                      <span>{isPro ? 'Get Jorgius Pro Link' : 'Start Texting Jorgius'}</span>
+                      <span>{isUltra ? 'Get Jorgius Ultra Link' : isPro ? 'Get Jorgius Pro Link' : 'Start Texting Jorgius'}</span>
                     </>
                   )}
                 </button>
@@ -217,7 +254,7 @@ export default function HowItWorks({ planMode = 'demo', onPlanChange }) {
                 <CheckCircle size={24} color="#ffffff" />
               </div>
               <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '6px' }}>
-                {isPro ? 'Payment Link Sent!' : 'You\'re All Set!'}
+                {isDemo ? 'You\'re All Set!' : 'Payment Link Sent!'}
               </h3>
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', lineHeight: '1.45' }}>
                 Jorgius will reach out shortly to <strong style={{ color: '#fff' }}>{phoneNumber}</strong>.
@@ -229,3 +266,4 @@ export default function HowItWorks({ planMode = 'demo', onPlanChange }) {
     </section>
   );
 }
+

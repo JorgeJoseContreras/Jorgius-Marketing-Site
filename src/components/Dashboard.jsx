@@ -79,6 +79,22 @@ export default function Dashboard({ user, onSignOut, onOpenStatus }) {
   const [loadingAccounts, setLoadingAccounts] = useState(false);
   const [disconnectingEmail, setDisconnectingEmail] = useState(null);
 
+  // Contacts & Address Book state
+  const [contacts, setContacts] = useState([]);
+  const [loadingContacts, setLoadingContacts] = useState(false);
+  const [contactSearch, setContactSearch] = useState('');
+  const [showAddContactModal, setShowAddContactModal] = useState(false);
+  const [newContactName, setNewContactName] = useState('');
+  const [newContactPhone, setNewContactPhone] = useState('');
+  const [newContactEmail, setNewContactEmail] = useState('');
+  const [newContactNotes, setNewContactNotes] = useState('');
+  const [editingContactId, setEditingContactId] = useState(null);
+
+  // Call Logs & Transcripts state
+  const [calls, setCalls] = useState([]);
+  const [loadingCalls, setLoadingCalls] = useState(false);
+  const [expandedCallId, setExpandedCallId] = useState(null);
+
   const [loading, setLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
@@ -141,10 +157,91 @@ export default function Dashboard({ user, onSignOut, onOpenStatus }) {
     };
   }, [user, phoneNumber, isAdmin]);
 
+  const fetchContacts = async () => {
+    setLoadingContacts(true);
+    try {
+      const meta = user?.user_metadata || {};
+      const rawPhone = phoneNumber || meta.phone_number || (isAdmin ? '+19549997574' : '');
+      const res = await fetch(`https://notification-assistant.onrender.com/api/user/contacts?phone=${encodeURIComponent(rawPhone)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.ok) setContacts(data.contacts || []);
+      }
+    } catch (e) {
+      console.error('Error fetching contacts:', e);
+    } finally {
+      setLoadingContacts(false);
+    }
+  };
+
+  const fetchCalls = async () => {
+    setLoadingCalls(true);
+    try {
+      const meta = user?.user_metadata || {};
+      const rawPhone = phoneNumber || meta.phone_number || (isAdmin ? '+19549997574' : '');
+      const res = await fetch(`https://notification-assistant.onrender.com/api/user/calls?phone=${encodeURIComponent(rawPhone)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.ok) setCalls(data.calls || []);
+      }
+    } catch (e) {
+      console.error('Error fetching calls:', e);
+    } finally {
+      setLoadingCalls(false);
+    }
+  };
+
+  const handleSaveContact = async (e) => {
+    e.preventDefault();
+    if (!newContactName.trim()) return;
+    try {
+      const meta = user?.user_metadata || {};
+      const rawPhone = phoneNumber || meta.phone_number || (isAdmin ? '+19549997574' : '');
+      const res = await fetch('https://notification-assistant.onrender.com/api/user/contacts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: editingContactId,
+          name: newContactName,
+          phone: newContactPhone,
+          email: newContactEmail,
+          notes: newContactNotes,
+          user_phone: rawPhone
+        })
+      });
+      if (res.ok) {
+        setShowAddContactModal(false);
+        setNewContactName('');
+        setNewContactPhone('');
+        setNewContactEmail('');
+        setNewContactNotes('');
+        setEditingContactId(null);
+        await fetchContacts();
+      }
+    } catch (err) {
+      console.error('Error saving contact:', err);
+    }
+  };
+
+  const handleDeleteContact = async (id, name) => {
+    if (!window.confirm(`Are you sure you want to delete ${name} from your contacts?`)) return;
+    try {
+      const res = await fetch(`https://notification-assistant.onrender.com/api/user/contacts/${id}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) {
+        await fetchContacts();
+      }
+    } catch (err) {
+      console.error('Error deleting contact:', err);
+    }
+  };
+
   const navTabs = [
     { id: 'settings', label: 'Settings', icon: Settings },
     { id: 'interactions', label: 'Interactions', icon: MessageSquare },
     { id: 'voice', label: 'Voice & Phone Calls', icon: Phone, isUltra: true },
+    { id: 'contacts', label: 'Contacts & Address Book', icon: Users, isUltra: true },
     { id: 'email', label: 'Email Analysis', icon: Mail, isUltra: true },
     { id: 'subscription', label: 'Manage Subscription', icon: CreditCard },
     { id: 'invite', label: 'Invite Users', icon: UserPlus },
@@ -1366,6 +1463,417 @@ export default function Dashboard({ user, onSignOut, onOpenStatus }) {
                     </div>
                   </TiltCard>
 
+                </div>
+              )}
+
+              {/* Call History & Transcripts Section */}
+              {(plan === 'ultra' || isAdmin) && (
+                <TiltCard maxTilt={1.5}>
+                  <div style={{ padding: '24px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <h4 style={{ fontSize: '1.05rem', fontWeight: '800', color: '#fff' }}>
+                          🎙️ Recent Phone Calls &amp; Transcripts
+                        </h4>
+                        <span style={{ fontSize: '0.75rem', background: 'rgba(52, 211, 153, 0.12)', color: '#34d399', padding: '2px 8px', borderRadius: '12px', fontWeight: '700' }}>
+                          {calls.length} Recorded
+                        </span>
+                      </div>
+                      <button
+                        onClick={fetchCalls}
+                        disabled={loadingCalls}
+                        className="btn-ghost"
+                        style={{ padding: '6px 12px', fontSize: '0.78rem', gap: '6px' }}
+                      >
+                        <RefreshCw size={12} className={loadingCalls ? "animate-spin" : ""} />
+                        <span>Refresh</span>
+                      </button>
+                    </div>
+
+                    {loadingCalls && calls.length === 0 ? (
+                      <div style={{ textAlign: 'center', padding: '30px', color: 'var(--text-secondary)' }}>
+                        <Loader2 size={24} className="animate-spin" style={{ margin: '0 auto 10px auto' }} />
+                        <p style={{ fontSize: '0.85rem' }}>Loading recent calls...</p>
+                      </div>
+                    ) : calls.length === 0 ? (
+                      <div style={{ textAlign: 'center', padding: '32px 16px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px dashed rgba(255,255,255,0.1)' }}>
+                        <Phone size={28} color="rgba(255,255,255,0.2)" style={{ margin: '0 auto 10px auto' }} />
+                        <div style={{ fontSize: '0.9rem', fontWeight: '600', color: '#fff' }}>No call history yet</div>
+                        <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                          Call +1 (716) 670-2614 to speak with Jorgius. Your call transcripts and summaries will appear here automatically!
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        {calls.map((c) => {
+                          const mins = Math.floor((c.duration_seconds || 0) / 60);
+                          const secs = (c.duration_seconds || 0) % 60;
+                          const durText = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+                          const isExpanded = expandedCallId === c.id;
+
+                          return (
+                            <div
+                              key={c.id || c.call_id}
+                              style={{
+                                padding: '16px',
+                                background: 'rgba(255, 255, 255, 0.03)',
+                                borderRadius: '12px',
+                                border: '1px solid rgba(255, 255, 255, 0.08)',
+                                transition: 'all 0.2s ease'
+                              }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                  <div style={{
+                                    width: '32px',
+                                    height: '32px',
+                                    borderRadius: '8px',
+                                    background: 'rgba(52, 211, 153, 0.15)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                  }}>
+                                    <Phone size={15} color="#34d399" />
+                                  </div>
+                                  <div>
+                                    <div style={{ fontSize: '0.88rem', fontWeight: '700', color: '#fff' }}>
+                                      {c.direction === 'outbound' ? 'Outbound Call' : 'Inbound Phone Call'}
+                                    </div>
+                                    <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)' }}>
+                                      {c.created_at ? new Date(c.created_at).toLocaleString() : 'Recent'}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                  <span style={{ fontSize: '0.74rem', background: 'rgba(255,255,255,0.06)', color: '#cbd5e1', padding: '3px 8px', borderRadius: '6px', fontWeight: '600' }}>
+                                    ⏱️ {durText}
+                                  </span>
+                                  <span style={{ fontSize: '0.74rem', background: 'rgba(52, 211, 153, 0.12)', color: '#34d399', padding: '3px 8px', borderRadius: '6px', fontWeight: '700' }}>
+                                    ✓ Completed
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Executive Summary */}
+                              {c.summary && (
+                                <div style={{ marginTop: '12px', padding: '10px 14px', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', borderLeft: '3px solid #34d399', fontSize: '0.82rem', color: '#e2e8f0', lineHeight: '1.45' }}>
+                                  <div style={{ fontSize: '0.72rem', color: '#34d399', fontWeight: '700', textTransform: 'uppercase', marginBottom: '2px' }}>
+                                    Executive Summary
+                                  </div>
+                                  {c.summary}
+                                </div>
+                              )}
+
+                              {/* Audio Recording Player */}
+                              {c.recording_url && (
+                                <div style={{ marginTop: '12px' }}>
+                                  <audio controls style={{ width: '100%', height: '34px' }} src={c.recording_url}>
+                                    Your browser does not support audio playback.
+                                  </audio>
+                                </div>
+                              )}
+
+                              {/* Expandable Transcript */}
+                              {c.transcript && (
+                                <div style={{ marginTop: '10px' }}>
+                                  <button
+                                    onClick={() => setExpandedCallId(isExpanded ? null : c.id)}
+                                    style={{
+                                      background: 'none',
+                                      border: 'none',
+                                      color: '#818cf8',
+                                      fontSize: '0.76rem',
+                                      fontWeight: '600',
+                                      cursor: 'pointer',
+                                      padding: '4px 0'
+                                    }}
+                                  >
+                                    {isExpanded ? '▲ Hide Full Transcript' : '▼ View Full Conversation Transcript'}
+                                  </button>
+                                  {isExpanded && (
+                                    <div style={{ marginTop: '8px', padding: '12px', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', fontSize: '0.78rem', color: '#94a3b8', whiteSpace: 'pre-wrap', lineHeight: '1.5', maxHeight: '250px', overflowY: 'auto' }}>
+                                      {c.transcript}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </TiltCard>
+              )}
+
+            </div>
+          )}
+
+          {/* TAB: CONTACTS & ADDRESS BOOK */}
+          {activeTab === 'contacts' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              
+              {/* Header Card */}
+              <TiltCard maxTilt={2}>
+                <div style={{ padding: '24px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '14px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{ padding: '10px', background: 'rgba(99, 102, 241, 0.1)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Users size={22} color="#818cf8" />
+                      </div>
+                      <div>
+                        <h3 style={{ fontSize: '1.15rem', fontWeight: '800', color: '#fff' }}>
+                          Contacts &amp; Address Book
+                        </h3>
+                        <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                          Manage stored contacts so Jorgius knows exactly who you mean on voice calls and iMessage.
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        setEditingContactId(null);
+                        setNewContactName('');
+                        setNewContactPhone('');
+                        setNewContactEmail('');
+                        setNewContactNotes('');
+                        setShowAddContactModal(true);
+                      }}
+                      className="btn-primary"
+                      style={{ padding: '9px 18px', fontSize: '0.85rem', gap: '6px' }}
+                    >
+                      <UserPlus size={15} />
+                      <span>+ Add Contact</span>
+                    </button>
+                  </div>
+                </div>
+              </TiltCard>
+
+              {/* Contacts List Card */}
+              <TiltCard maxTilt={1.5}>
+                <div style={{ padding: '24px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', gap: '12px', flexWrap: 'wrap' }}>
+                    <input
+                      type="text"
+                      placeholder="Search contacts by name, email, or phone..."
+                      value={contactSearch}
+                      onChange={(e) => setContactSearch(e.target.value)}
+                      className="form-input"
+                      style={{ maxWidth: '340px', fontSize: '0.82rem', padding: '8px 12px' }}
+                    />
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                        {contacts.length} Contact{contacts.length === 1 ? '' : 's'}
+                      </span>
+                      <button
+                        onClick={fetchContacts}
+                        disabled={loadingContacts}
+                        className="btn-ghost"
+                        style={{ padding: '6px 10px', fontSize: '0.76rem', gap: '5px' }}
+                      >
+                        <RefreshCw size={12} className={loadingContacts ? "animate-spin" : ""} />
+                        <span>Refresh</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {loadingContacts && contacts.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '30px', color: 'var(--text-secondary)' }}>
+                      <Loader2 size={24} className="animate-spin" style={{ margin: '0 auto 10px auto' }} />
+                      <p style={{ fontSize: '0.85rem' }}>Loading address book...</p>
+                    </div>
+                  ) : contacts.filter(c => !contactSearch || (c.name && c.name.toLowerCase().includes(contactSearch.toLowerCase())) || (c.email && c.email.toLowerCase().includes(contactSearch.toLowerCase())) || (c.phone && c.phone.includes(contactSearch))).length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '36px 16px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px dashed rgba(255,255,255,0.1)' }}>
+                      <Users size={32} color="rgba(255,255,255,0.2)" style={{ margin: '0 auto 10px auto' }} />
+                      <div style={{ fontSize: '0.95rem', fontWeight: '600', color: '#fff' }}>No contacts found</div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px', maxWidth: '360px', margin: '4px auto 16px auto' }}>
+                        Add contacts like family, doctors, or colleagues so Jorgius can resolve names when sending emails or transferring calls.
+                      </div>
+                      <button
+                        onClick={() => {
+                          setEditingContactId(null);
+                          setNewContactName('');
+                          setNewContactPhone('');
+                          setNewContactEmail('');
+                          setNewContactNotes('');
+                          setShowAddContactModal(true);
+                        }}
+                        className="btn-primary"
+                        style={{ padding: '8px 16px', fontSize: '0.82rem', margin: '0 auto' }}
+                      >
+                        + Add First Contact
+                      </button>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '14px' }}>
+                      {contacts
+                        .filter(c => !contactSearch || (c.name && c.name.toLowerCase().includes(contactSearch.toLowerCase())) || (c.email && c.email.toLowerCase().includes(contactSearch.toLowerCase())) || (c.phone && c.phone.includes(contactSearch)))
+                        .map((c) => (
+                          <div
+                            key={c.id}
+                            style={{
+                              padding: '16px',
+                              background: 'rgba(255, 255, 255, 0.03)',
+                              borderRadius: '12px',
+                              border: '1px solid rgba(255, 255, 255, 0.08)',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              justifyContent: 'space-between',
+                              gap: '12px'
+                            }}
+                          >
+                            <div>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                <div style={{ fontSize: '0.98rem', fontWeight: '800', color: '#fff' }}>
+                                  {c.name}
+                                </div>
+                                <span style={{ fontSize: '0.68rem', background: 'rgba(99, 102, 241, 0.15)', color: '#a5b4fc', padding: '2px 8px', borderRadius: '6px', fontWeight: '600', textTransform: 'capitalize' }}>
+                                  {c.relationship || 'Contact'}
+                                </span>
+                              </div>
+
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.78rem' }}>
+                                {c.phone && (
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#cbd5e1' }}>
+                                    <Phone size={13} color="#34d399" />
+                                    <span>{c.phone}</span>
+                                  </div>
+                                )}
+                                {c.email && (
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#cbd5e1', wordBreak: 'break-all' }}>
+                                    <Mail size={13} color="#818cf8" />
+                                    <span>{c.email}</span>
+                                  </div>
+                                )}
+                                {c.notes && (
+                                  <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', marginTop: '4px', fontStyle: 'italic' }}>
+                                    "{c.notes}"
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                              <button
+                                onClick={() => {
+                                  setEditingContactId(c.id);
+                                  setNewContactName(c.name || '');
+                                  setNewContactPhone(c.phone || '');
+                                  setNewContactEmail(c.email || '');
+                                  setNewContactNotes(c.notes || '');
+                                  setShowAddContactModal(true);
+                                }}
+                                style={{
+                                  padding: '5px 10px',
+                                  background: 'rgba(255,255,255,0.06)',
+                                  border: '1px solid rgba(255,255,255,0.12)',
+                                  borderRadius: '6px',
+                                  color: '#f8fafc',
+                                  fontSize: '0.74rem',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => handleDeleteContact(c.id, c.name)}
+                                style={{
+                                  padding: '5px 10px',
+                                  background: 'rgba(239, 68, 68, 0.08)',
+                                  border: '1px solid rgba(239, 68, 68, 0.25)',
+                                  borderRadius: '6px',
+                                  color: '#f87171',
+                                  fontSize: '0.74rem',
+                                  cursor: 'pointer',
+                                  marginLeft: 'auto'
+                                }}
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                </div>
+              </TiltCard>
+
+              {/* Add/Edit Contact Modal */}
+              {showAddContactModal && (
+                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(5px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+                  <div style={{ background: '#111827', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '16px', padding: '24px', maxWidth: '440px', width: '100%', boxShadow: '0 20px 40px rgba(0,0,0,0.5)' }}>
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: '800', color: '#fff', marginBottom: '16px' }}>
+                      {editingContactId ? '✏️ Edit Contact' : '➕ Add New Contact'}
+                    </h3>
+                    <form onSubmit={handleSaveContact} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>Full Name *</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="e.g. Justin Bender, Dr. Smith, Mom"
+                          value={newContactName}
+                          onChange={(e) => setNewContactName(e.target.value)}
+                          className="form-input"
+                          style={{ width: '100%' }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>Phone Number</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. +19546816129"
+                          value={newContactPhone}
+                          onChange={(e) => setNewContactPhone(e.target.value)}
+                          className="form-input"
+                          style={{ width: '100%' }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>Email Address</label>
+                        <input
+                          type="email"
+                          placeholder="e.g. justin@example.com"
+                          value={newContactEmail}
+                          onChange={(e) => setNewContactEmail(e.target.value)}
+                          className="form-input"
+                          style={{ width: '100%' }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>Notes / Context</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Business partner, Dentist, Family"
+                          value={newContactNotes}
+                          onChange={(e) => setNewContactNotes(e.target.value)}
+                          className="form-input"
+                          style={{ width: '100%' }}
+                        />
+                      </div>
+
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+                        <button
+                          type="button"
+                          onClick={() => setShowAddContactModal(false)}
+                          className="btn-ghost"
+                          style={{ padding: '8px 16px', fontSize: '0.85rem' }}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="submit"
+                          className="btn-primary"
+                          style={{ padding: '8px 18px', fontSize: '0.85rem' }}
+                        >
+                          Save Contact
+                        </button>
+                      </div>
+                    </form>
+                  </div>
                 </div>
               )}
 

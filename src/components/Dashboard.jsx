@@ -237,6 +237,23 @@ export default function Dashboard({ user, onSignOut, onOpenStatus }) {
     fetchConnectedAccounts();
   }, [user, phoneNumber, isAdmin, activeTab]);
 
+  const handleSetDefaultEmail = async (accountEmail) => {
+    try {
+      const meta = user?.user_metadata || {};
+      const rawPhone = phoneNumber || meta.phone_number || (isAdmin ? '+19549997574' : '');
+      const res = await fetch('https://notification-assistant.onrender.com/api/user/set-default-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: accountEmail, phone: rawPhone }),
+      });
+      if (res.ok) {
+        await fetchConnectedAccounts();
+      }
+    } catch (err) {
+      console.error('Error setting default email:', err);
+    }
+  };
+
   const handleDisconnectAccount = async (accountEmail, accountType) => {
     if (!window.confirm(`Are you sure you want to disconnect ${accountEmail}?`)) return;
     setDisconnectingEmail(accountEmail);
@@ -1463,10 +1480,17 @@ export default function Dashboard({ user, onSignOut, onOpenStatus }) {
                                       {acc.type === 'google' ? 'G' : 'O'}
                                     </div>
                                     <div>
-                                      <div style={{ fontSize: '0.9rem', fontWeight: '700', color: '#fff', wordBreak: 'break-all' }}>
-                                        {acc.email}
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                        <div style={{ fontSize: '0.9rem', fontWeight: '700', color: '#fff', wordBreak: 'break-all' }}>
+                                          {acc.email}
+                                        </div>
+                                        {acc.is_default && (
+                                          <span style={{ fontSize: '0.68rem', background: 'rgba(245, 158, 11, 0.18)', color: '#fbbf24', border: '1px solid rgba(245, 158, 11, 0.35)', padding: '1px 6px', borderRadius: '6px', fontWeight: '700' }}>
+                                            ★ Default Sender
+                                          </span>
+                                        )}
                                       </div>
-                                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
                                         {acc.provider || (acc.type === 'google' ? 'Gmail' : 'Outlook')}
                                       </div>
                                     </div>
@@ -1492,6 +1516,29 @@ export default function Dashboard({ user, onSignOut, onOpenStatus }) {
                               </div>
 
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                {!acc.is_default && !acc.needs_reconnect && (
+                                  <button
+                                    onClick={() => handleSetDefaultEmail(acc.email)}
+                                    style={{
+                                      padding: '6px 12px',
+                                      background: 'rgba(255, 255, 255, 0.05)',
+                                      border: '1px solid rgba(255, 255, 255, 0.15)',
+                                      borderRadius: '8px',
+                                      color: '#f8fafc',
+                                      fontSize: '0.75rem',
+                                      fontWeight: '600',
+                                      cursor: 'pointer',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      gap: '5px',
+                                      transition: 'all 0.2s'
+                                    }}
+                                  >
+                                    <span>★ Set as Default Sender</span>
+                                  </button>
+                                )}
+
                                 {acc.needs_reconnect && (
                                   <a
                                     href={acc.type === 'google' ? 'https://notification-assistant.onrender.com/auth/login' : 'https://notification-assistant.onrender.com/auth/microsoft/login'}

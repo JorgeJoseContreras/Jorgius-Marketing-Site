@@ -1468,44 +1468,81 @@ export default function Dashboard({ user, onSignOut, onOpenStatus }) {
                                 </div>
 
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '10px', marginBottom: '14px' }}>
-                                  <span style={{ display: 'inline-block', width: '7px', height: '7px', borderRadius: '50%', background: '#34d399', boxShadow: '0 0 6px #34d399' }}></span>
-                                  <span style={{ fontSize: '0.75rem', color: '#34d399', fontWeight: '600' }}>Active &amp; Syncing</span>
-                                  <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginLeft: 'auto' }}>Read-Only</span>
+                                  {acc.needs_reconnect ? (
+                                    <>
+                                      <span style={{ display: 'inline-block', width: '7px', height: '7px', borderRadius: '50%', background: '#f59e0b', boxShadow: '0 0 6px #f59e0b' }}></span>
+                                      <span style={{ fontSize: '0.75rem', color: '#f59e0b', fontWeight: '700' }}>Re-Auth Required</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <span style={{ display: 'inline-block', width: '7px', height: '7px', borderRadius: '50%', background: '#34d399', boxShadow: '0 0 6px #34d399' }}></span>
+                                      <span style={{ fontSize: '0.75rem', color: '#34d399', fontWeight: '600' }}>Active &amp; Syncing</span>
+                                    </>
+                                  )}
+                                  <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginLeft: 'auto' }}>
+                                    {acc.scopes || 'Read-Only'}
+                                  </span>
                                 </div>
                               </div>
 
-                              <button
-                                onClick={() => handleDisconnectAccount(acc.email, acc.type)}
-                                disabled={disconnectingEmail === acc.email}
-                                style={{
-                                  padding: '7px 12px',
-                                  background: 'rgba(239, 68, 68, 0.08)',
-                                  border: '1px solid rgba(239, 68, 68, 0.25)',
-                                  borderRadius: '8px',
-                                  color: '#f87171',
-                                  fontSize: '0.78rem',
-                                  fontWeight: '600',
-                                  cursor: 'pointer',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  gap: '6px',
-                                  width: '100%',
-                                  transition: 'all 0.2s ease'
-                                }}
-                              >
-                                {disconnectingEmail === acc.email ? (
-                                  <>
-                                    <Loader2 size={12} className="animate-spin" />
-                                    <span>Disconnecting...</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <Trash2 size={12} />
-                                    <span>Disconnect Mailbox</span>
-                                  </>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                {acc.needs_reconnect && (
+                                  <a
+                                    href={acc.type === 'google' ? 'https://notification-assistant.onrender.com/auth/login' : 'https://notification-assistant.onrender.com/auth/microsoft/login'}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    style={{
+                                      padding: '7px 12px',
+                                      background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                                      borderRadius: '8px',
+                                      color: '#000',
+                                      fontSize: '0.78rem',
+                                      fontWeight: '700',
+                                      textDecoration: 'none',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      gap: '6px'
+                                    }}
+                                  >
+                                    <ExternalLink size={12} />
+                                    <span>Re-Authorize {acc.type === 'google' ? 'Google' : 'Outlook'}</span>
+                                  </a>
                                 )}
-                              </button>
+                                
+                                <button
+                                  onClick={() => handleDisconnectAccount(acc.email, acc.type)}
+                                  disabled={disconnectingEmail === acc.email}
+                                  style={{
+                                    padding: '7px 12px',
+                                    background: 'rgba(239, 68, 68, 0.08)',
+                                    border: '1px solid rgba(239, 68, 68, 0.25)',
+                                    borderRadius: '8px',
+                                    color: '#f87171',
+                                    fontSize: '0.78rem',
+                                    fontWeight: '600',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '6px',
+                                    width: '100%',
+                                    transition: 'all 0.2s ease'
+                                  }}
+                                >
+                                  {disconnectingEmail === acc.email ? (
+                                    <>
+                                      <Loader2 size={12} className="animate-spin" />
+                                      <span>Disconnecting...</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Trash2 size={12} />
+                                      <span>Disconnect Mailbox</span>
+                                    </>
+                                  )}
+                                </button>
+                              </div>
                             </div>
                           </TiltCard>
                         ))}

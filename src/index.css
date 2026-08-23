@@ -440,3 +440,19 @@ select option:checked {
   color: #ffffff !important;
   box-shadow: 0 0 10px 100px #1a1d28 inset !important;
 }
+
+/* 60fps Smooth Spinning Animation */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite !important;
+  display: inline-block;
+}
+

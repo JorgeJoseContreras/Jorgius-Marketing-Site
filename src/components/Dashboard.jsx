@@ -204,9 +204,10 @@ export default function Dashboard({ user, onSignOut, onOpenStatus }) {
   }, [user, isAdmin]);
 
   // Fetch connected email accounts (Gmail / Outlook) from backend
-  const fetchConnectedAccounts = async () => {
+  const fetchConnectedAccounts = async (isManual = false) => {
     if (!user) return;
     setLoadingAccounts(true);
+    const startTime = Date.now();
     try {
       const meta = user.user_metadata || {};
       const rawPhone = phoneNumber || meta.phone_number || (isAdmin ? '+19549997574' : '');
@@ -221,15 +222,20 @@ export default function Dashboard({ user, onSignOut, onOpenStatus }) {
     } catch (err) {
       console.warn('Error fetching connected accounts:', err);
     } finally {
-      setLoadingAccounts(false);
+      if (isManual) {
+        const elapsed = Date.now() - startTime;
+        const delay = Math.max(0, 600 - elapsed);
+        setTimeout(() => setLoadingAccounts(false), delay);
+      } else {
+        setLoadingAccounts(false);
+      }
     }
   };
 
+  // Eagerly pre-load connected accounts on initial render and when tab switches
   useEffect(() => {
-    if (activeTab === 'email') {
-      fetchConnectedAccounts();
-    }
-  }, [activeTab, user, phoneNumber, isAdmin]);
+    fetchConnectedAccounts();
+  }, [user, phoneNumber, isAdmin, activeTab]);
 
   const handleDisconnectAccount = async (accountEmail, accountType) => {
     if (!window.confirm(`Are you sure you want to disconnect ${accountEmail}?`)) return;
@@ -1419,18 +1425,18 @@ export default function Dashboard({ user, onSignOut, onOpenStatus }) {
                         </span>
                       </div>
                       <button
-                        onClick={fetchConnectedAccounts}
+                        onClick={() => fetchConnectedAccounts(true)}
                         disabled={loadingAccounts}
-                        style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.78rem', padding: '4px 8px' }}
+                        style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.78rem', padding: '4px 8px', borderRadius: '6px' }}
                       >
-                        <RefreshCw size={13} className={loadingAccounts ? 'animate-spin' : ''} />
+                        <RefreshCw size={13} style={{ animation: loadingAccounts ? 'spin 0.8s linear infinite' : 'none' }} />
                         <span>Refresh</span>
                       </button>
                     </div>
 
                     {loadingAccounts && connectedAccounts.length === 0 ? (
                       <div style={{ padding: '24px', textAlign: 'center', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)' }}>
-                        <Loader2 size={20} className="animate-spin" color="var(--accent-blue)" style={{ margin: '0 auto 8px auto' }} />
+                        <Loader2 size={22} color="var(--accent-blue)" style={{ margin: '0 auto 8px auto', animation: 'spin 1s linear infinite' }} />
                         <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Scanning connected accounts...</div>
                       </div>
                     ) : connectedAccounts.length > 0 ? (

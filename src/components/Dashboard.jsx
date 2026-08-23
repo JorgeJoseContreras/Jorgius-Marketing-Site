@@ -237,14 +237,14 @@ export default function Dashboard({ user, onSignOut, onOpenStatus }) {
     fetchConnectedAccounts();
   }, [user, phoneNumber, isAdmin, activeTab]);
 
-  const handleSetDefaultEmail = async (accountEmail) => {
+  const handleSetDefaultEmail = async (accountEmail, accountType) => {
     try {
       const meta = user?.user_metadata || {};
       const rawPhone = phoneNumber || meta.phone_number || (isAdmin ? '+19549997574' : '');
       const res = await fetch('https://notification-assistant.onrender.com/api/user/set-default-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: accountEmail, phone: rawPhone }),
+        body: JSON.stringify({ email: accountEmail, type: accountType, phone: rawPhone }),
       });
       if (res.ok) {
         await fetchConnectedAccounts();
@@ -1518,7 +1518,7 @@ export default function Dashboard({ user, onSignOut, onOpenStatus }) {
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                 {!acc.is_default && !acc.needs_reconnect && (
                                   <button
-                                    onClick={() => handleSetDefaultEmail(acc.email)}
+                                    onClick={() => handleSetDefaultEmail(acc.email, acc.type)}
                                     style={{
                                       padding: '6px 12px',
                                       background: 'rgba(255, 255, 255, 0.05)',

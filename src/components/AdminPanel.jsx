@@ -190,9 +190,14 @@ export default function AdminPanel({ onBack, embedded = false }) {
             </label>
             <input
               type="text"
-              placeholder="e.g. August 23, 2026"
-              value={statusData.creationDate || statusData.lastUpdatedDisplay || ''}
-              onChange={(e) => setStatusData({ ...statusData, creationDate: e.target.value, lastUpdatedDisplay: e.target.value })}
+              placeholder="e.g. 2026-08-18 or August 18, 2026"
+              value={statusData.retroDate || statusData.creationDate || statusData.lastUpdatedDisplay || ''}
+              onChange={(e) => setStatusData({ 
+                ...statusData, 
+                retroDate: e.target.value,
+                creationDate: e.target.value, 
+                lastUpdatedDisplay: e.target.value 
+              })}
               className="form-input"
               style={{ width: '100%' }}
             />

@@ -1,12 +1,53 @@
 const STORAGE_KEY = 'jorgius_system_status_v1';
 const VERSION_KEY = 'jorgius_app_version_v1';
 
+export const parseAnyDate = (str) => {
+  if (!str) return null;
+  if (str instanceof Date) return isNaN(str.getTime()) ? null : str;
+  if (typeof str === 'string') {
+    const trimmed = str.trim();
+    if (!trimmed) return null;
+    // Check YYYY-MM-DD
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+      const [y, m, d] = trimmed.split('-').map(Number);
+      return new Date(y, m - 1, d);
+    }
+    // Check MM/DD/YYYY
+    if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(trimmed)) {
+      const [m, d, y] = trimmed.split('/').map(Number);
+      return new Date(y, m - 1, d);
+    }
+    const parsed = new Date(trimmed);
+    if (!isNaN(parsed.getTime())) return parsed;
+  }
+  return null;
+};
+
+export const formatStatusDate = (str) => {
+  const d = parseAnyDate(str);
+  if (!d) return str || 'Recently';
+  return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+};
+
+export const isSameDay = (d1, d2) => {
+  if (!d1 || !d2) return false;
+  const date1 = parseAnyDate(d1);
+  const date2 = parseAnyDate(d2);
+  if (!date1 || !date2) return false;
+  return (
+    date1.getFullYear() === date2.getFullYear() &&
+    date1.getMonth() === date2.getMonth() &&
+    date1.getDate() === date2.getDate()
+  );
+};
+
 export const DEFAULT_STATUS_DATA = {
   status: 'All Systems Operational',
   statusCode: 'operational', // 'operational' | 'degraded' | 'outage' | 'maintenance'
   uptime: '100%',
   version: 'v2.5.1',
   creationDate: '2026-07-01',
+  retroDate: '2026-07-01',
   lastUpdated: new Date().toISOString(),
   incidents: [
     {
@@ -33,8 +74,11 @@ export const getSystemStatus = () => {
 
 export const saveSystemStatus = (newStatusData) => {
   try {
+    const effectiveRetroDate = newStatusData.retroDate || newStatusData.creationDate || newStatusData.lastUpdatedDisplay;
     const updated = {
       ...newStatusData,
+      retroDate: effectiveRetroDate,
+      creationDate: effectiveRetroDate,
       lastUpdated: new Date().toISOString(),
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));

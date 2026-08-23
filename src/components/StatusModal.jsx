@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getSystemStatus } from '../utils/statusStore';
+import { getSystemStatus, formatStatusDate, parseAnyDate, isSameDay } from '../utils/statusStore';
 import { CheckCircle, AlertTriangle, XCircle, Wrench, X, ShieldCheck } from 'lucide-react';
 
 export default function StatusModal({ isOpen, onClose }) {
@@ -37,11 +37,18 @@ export default function StatusModal({ isOpen, onClose }) {
 
   const badge = getStatusBadge(statusData.statusCode);
 
+  // Parse active/retro date
+  const retroDateObj = parseAnyDate(statusData.retroDate || statusData.creationDate);
+  const formattedRetro = formatStatusDate(statusData.retroDate || statusData.creationDate);
+
   // Generate 30 daily bars with exact dates ending today
   const today = new Date();
+  today.setHours(23, 59, 59, 999);
+
   const timelineBars = Array.from({ length: 30 }).map((_, i) => {
     const d = new Date();
     d.setDate(today.getDate() - (29 - i));
+    d.setHours(0, 0, 0, 0);
     const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     
     // Default to green 100% operational
@@ -49,18 +56,45 @@ export default function StatusModal({ isOpen, onClose }) {
     let color = '#22c55e'; // Green
     let statusText = '100% Operational • No Incidents';
 
-    // If today and status is degraded or outage, reflect that bar
-    if (i === 29 && statusData.statusCode !== 'operational') {
-      statusType = statusData.statusCode;
-      if (statusType === 'degraded') {
-        color = '#f59e0b';
-        statusText = 'Minor Outage / Degraded';
-      } else if (statusType === 'outage') {
-        color = '#ef4444';
-        statusText = 'Major Outage';
-      } else if (statusType === 'maintenance') {
-        color = '#3b82f6';
-        statusText = 'Under Maintenance';
+    // 1. Check if there are specific incident logs on this date
+    if (statusData.incidents && statusData.incidents.length > 0) {
+      const matchingInc = statusData.incidents.find((inc) => isSameDay(inc.date, d));
+      if (matchingInc) {
+        statusType = matchingInc.type || 'degraded';
+        if (statusType === 'degraded') {
+          color = '#f59e0b';
+          statusText = `Degraded • ${matchingInc.title}`;
+        } else if (statusType === 'outage') {
+          color = '#ef4444';
+          statusText = `Outage • ${matchingInc.title}`;
+        } else if (statusType === 'maintenance') {
+          color = '#3b82f6';
+          statusText = `Maintenance • ${matchingInc.title}`;
+        } else {
+          color = '#22c55e';
+          statusText = `Operational • ${matchingInc.title}`;
+        }
+      }
+    }
+
+    // 2. Check if the active global status is non-operational and applies to this date
+    if (statusData.statusCode && statusData.statusCode !== 'operational') {
+      const isRetroDate = retroDateObj && isSameDay(retroDateObj, d);
+      const isOngoingFromRetro = retroDateObj && (d >= new Date(retroDateObj.getFullYear(), retroDateObj.getMonth(), retroDateObj.getDate()));
+      const isToday = (i === 29);
+
+      if (isRetroDate || isOngoingFromRetro || isToday) {
+        statusType = statusData.statusCode;
+        if (statusType === 'degraded') {
+          color = '#f59e0b';
+          statusText = `Degraded • ${statusData.status || 'Minor Outage'}`;
+        } else if (statusType === 'outage') {
+          color = '#ef4444';
+          statusText = `Outage • ${statusData.status || 'Major Outage'}`;
+        } else if (statusType === 'maintenance') {
+          color = '#3b82f6';
+          statusText = `Maintenance • ${statusData.status || 'Under Maintenance'}`;
+        }
       }
     }
 
@@ -72,6 +106,14 @@ export default function StatusModal({ isOpen, onClose }) {
       statusText,
     };
   });
+
+  const totalDays = timelineBars.length;
+  const operationalDays = timelineBars.filter((b) => b.statusType === 'operational').length;
+  const calculatedUptime = ((operationalDays / totalDays) * 100).toFixed(1) + '%';
+
+  const subtitleText = statusData.statusCode === 'operational'
+    ? `No active incidents reported • System operational as of ${formattedRetro}`
+    : `System notice active since ${formattedRetro}`;
 
   return (
     <div
@@ -151,14 +193,14 @@ export default function StatusModal({ isOpen, onClose }) {
                 {statusData.status || badge.label}
               </div>
               <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                No incidents reported since launch on 07/01/2026
+                {subtitleText}
               </div>
             </div>
           </div>
 
           <div style={{ textAlign: 'right' }}>
             <div style={{ fontSize: '1.3rem', fontWeight: '800', color: '#fff' }}>
-              {statusData.uptime || '100%'}
+              {statusData.uptime && statusData.uptime !== '100%' ? statusData.uptime : calculatedUptime}
             </div>
             <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>Overall Uptime</div>
           </div>
@@ -168,7 +210,9 @@ export default function StatusModal({ isOpen, onClose }) {
         <div style={{ marginBottom: '28px', position: 'relative' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '12px' }}>
             <span>Past 30 Days Uptime</span>
-            <span style={{ color: '#22c55e', fontWeight: '600' }}>100% Operational</span>
+            <span style={{ color: operationalDays === totalDays ? '#22c55e' : '#f59e0b', fontWeight: '600' }}>
+              {calculatedUptime} Operational
+            </span>
           </div>
 
           {/* Custom Mini Hover Tooltip Popup */}

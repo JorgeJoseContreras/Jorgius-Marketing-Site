@@ -5,7 +5,7 @@ import { getAppVersion } from '../utils/statusStore';
 import TiltCard from './TiltCard';
 import CustomSelect from './CustomSelect';
 import AdminPanel from './AdminPanel';
-import { LogOut, Save, Loader2, CheckCircle2, AlertCircle, Phone, Sparkles, Shield, User, Settings, HelpCircle, MessageSquare, Edit2, Users, CreditCard, Zap, Crown, XCircle, Send, Cpu, UserPlus, Gift, Copy, Check, Activity, BarChart3, ShieldAlert, Mail, Lock, ShieldCheck } from 'lucide-react';
+import { LogOut, Save, Loader2, CheckCircle2, AlertCircle, Phone, Sparkles, Shield, User, Settings, HelpCircle, MessageSquare, Edit2, Users, CreditCard, Zap, Crown, XCircle, Send, Cpu, UserPlus, Gift, Copy, Check, Activity, BarChart3, ShieldAlert, Mail, Lock, ShieldCheck, Trash2, RefreshCw, ExternalLink } from 'lucide-react';
 
 const getWeb3FormsKey = () => atob("N2FhNTQxMzMtYWMzMS00MTY3LWI3N2YtY2MzOGRkNzNhMjIw");
 const getHelpWeb3FormsKey = () => "6e12e079-3a7a-4550-9962-abca5fe691c9";
@@ -74,10 +74,14 @@ export default function Dashboard({ user, onSignOut, onOpenStatus }) {
   const [copiedRef, setCopiedRef] = useState(false);
   const [inviteSending, setInviteSending] = useState(false);
 
+  // Connected Email Accounts state
+  const [connectedAccounts, setConnectedAccounts] = useState([]);
+  const [loadingAccounts, setLoadingAccounts] = useState(false);
+  const [disconnectingEmail, setDisconnectingEmail] = useState(null);
+
   const [loading, setLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
-
 
   const isAdmin = user?.email === 'aghlc.nm@gmail.com';
 
@@ -198,6 +202,53 @@ export default function Dashboard({ user, onSignOut, onOpenStatus }) {
       }
     }
   }, [user, isAdmin]);
+
+  // Fetch connected email accounts (Gmail / Outlook) from backend
+  const fetchConnectedAccounts = async () => {
+    if (!user) return;
+    setLoadingAccounts(true);
+    try {
+      const meta = user.user_metadata || {};
+      const rawPhone = phoneNumber || meta.phone_number || (isAdmin ? '+19549997574' : '');
+      const userEmail = user.email || '';
+      const res = await fetch(`https://notification-assistant.onrender.com/api/user/connected-accounts?phone=${encodeURIComponent(rawPhone)}&email=${encodeURIComponent(userEmail)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.ok) {
+          setConnectedAccounts(data.accounts || []);
+        }
+      }
+    } catch (err) {
+      console.warn('Error fetching connected accounts:', err);
+    } finally {
+      setLoadingAccounts(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'email') {
+      fetchConnectedAccounts();
+    }
+  }, [activeTab, user, phoneNumber, isAdmin]);
+
+  const handleDisconnectAccount = async (accountEmail, accountType) => {
+    if (!window.confirm(`Are you sure you want to disconnect ${accountEmail}?`)) return;
+    setDisconnectingEmail(accountEmail);
+    try {
+      const res = await fetch('https://notification-assistant.onrender.com/api/user/disconnect-account', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: accountEmail, type: accountType }),
+      });
+      if (res.ok) {
+        await fetchConnectedAccounts();
+      }
+    } catch (err) {
+      console.error('Error disconnecting account:', err);
+    } finally {
+      setDisconnectingEmail(null);
+    }
+  };
 
   const activatePlan = async (targetPlan = 'pro') => {
     setLoading(true);
@@ -1354,61 +1405,181 @@ export default function Dashboard({ user, onSignOut, onOpenStatus }) {
                 </TiltCard>
               ) : (
                 /* Ultra / Admin Active Connect Section */
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
-                  
-                  {/* Connect Gmail Account */}
-                  <TiltCard maxTilt={3}>
-                    <div style={{ padding: '24px', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                      <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-                          <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(66, 133, 244, 0.1)', border: '1px solid rgba(66, 133, 244, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', color: '#4285F4', fontSize: '1.1rem' }}>G</div>
-                          <div>
-                            <h4 style={{ fontSize: '0.98rem', fontWeight: '700', color: '#fff' }}>Google Gmail Integration</h4>
-                            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Read-Only Inbox Analysis</span>
-                          </div>
-                        </div>
-                        <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '20px', lineHeight: '1.45' }}>
-                          Authorize Jorgius to read unread Gmail messages, extract 2FA codes, and summarize important emails for iMessage notifications.
-                        </p>
-                      </div>
-                      <a
-                        href="https://notification-assistant.onrender.com/auth/login"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="btn-primary"
-                        style={{ width: '100%', padding: '12px', justifyContent: 'center', fontSize: '0.88rem', gap: '8px', textDecoration: 'none', background: 'linear-gradient(135deg, #4285F4 0%, #34a853 100%)' }}
-                      >
-                        <span>Connect Google Account</span>
-                      </a>
-                    </div>
-                  </TiltCard>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
-                  {/* Connect Outlook Account */}
-                  <TiltCard maxTilt={3}>
-                    <div style={{ padding: '24px', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                      <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-                          <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(0, 120, 212, 0.1)', border: '1px solid rgba(0, 120, 212, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', color: '#0078D4', fontSize: '1.1rem' }}>O</div>
-                          <div>
-                            <h4 style={{ fontSize: '0.98rem', fontWeight: '700', color: '#fff' }}>Outlook / Office 365 Integration</h4>
-                            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Read-Only Inbox Analysis</span>
-                          </div>
-                        </div>
-                        <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '20px', lineHeight: '1.45' }}>
-                          Connect your Microsoft Outlook or Office 365 inbox for automated unread email polling and instant text alerts.
-                        </p>
+                  {/* Connected Inboxes Section */}
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <h4 style={{ fontSize: '1rem', fontWeight: '700', color: '#fff', margin: 0 }}>
+                          Connected Email Inboxes
+                        </h4>
+                        <span style={{ fontSize: '0.75rem', background: 'rgba(52, 211, 153, 0.15)', color: '#34d399', border: '1px solid rgba(52, 211, 153, 0.3)', padding: '2px 8px', borderRadius: '10px', fontWeight: '600' }}>
+                          {connectedAccounts.length} Active
+                        </span>
                       </div>
-                      <a
-                        href="https://notification-assistant.onrender.com/auth/microsoft/login"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="btn-primary"
-                        style={{ width: '100%', padding: '12px', justifyContent: 'center', fontSize: '0.88rem', gap: '8px', textDecoration: 'none', background: 'linear-gradient(135deg, #0078d4 0%, #005a9e 100%)' }}
+                      <button
+                        onClick={fetchConnectedAccounts}
+                        disabled={loadingAccounts}
+                        style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.78rem', padding: '4px 8px' }}
                       >
-                        <span>Connect Outlook Account</span>
-                      </a>
+                        <RefreshCw size={13} className={loadingAccounts ? 'animate-spin' : ''} />
+                        <span>Refresh</span>
+                      </button>
                     </div>
-                  </TiltCard>
+
+                    {loadingAccounts && connectedAccounts.length === 0 ? (
+                      <div style={{ padding: '24px', textAlign: 'center', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                        <Loader2 size={20} className="animate-spin" color="var(--accent-blue)" style={{ margin: '0 auto 8px auto' }} />
+                        <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Scanning connected accounts...</div>
+                      </div>
+                    ) : connectedAccounts.length > 0 ? (
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+                        {connectedAccounts.map((acc, idx) => (
+                          <TiltCard key={idx} maxTilt={3}>
+                            <div style={{ padding: '18px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid rgba(52, 211, 153, 0.25)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%' }}>
+                              <div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px', marginBottom: '10px' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <div style={{
+                                      width: '32px',
+                                      height: '32px',
+                                      borderRadius: '8px',
+                                      background: acc.type === 'google' ? 'rgba(66, 133, 244, 0.15)' : 'rgba(0, 120, 212, 0.15)',
+                                      border: `1px solid ${acc.type === 'google' ? 'rgba(66, 133, 244, 0.3)' : 'rgba(0, 120, 212, 0.3)'}`,
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      fontWeight: '800',
+                                      color: acc.type === 'google' ? '#4285F4' : '#0078D4',
+                                      fontSize: '0.95rem'
+                                    }}>
+                                      {acc.type === 'google' ? 'G' : 'O'}
+                                    </div>
+                                    <div>
+                                      <div style={{ fontSize: '0.9rem', fontWeight: '700', color: '#fff', wordBreak: 'break-all' }}>
+                                        {acc.email}
+                                      </div>
+                                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                                        {acc.provider || (acc.type === 'google' ? 'Gmail' : 'Outlook')}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '10px', marginBottom: '14px' }}>
+                                  <span style={{ display: 'inline-block', width: '7px', height: '7px', borderRadius: '50%', background: '#34d399', boxShadow: '0 0 6px #34d399' }}></span>
+                                  <span style={{ fontSize: '0.75rem', color: '#34d399', fontWeight: '600' }}>Active &amp; Syncing</span>
+                                  <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginLeft: 'auto' }}>Read-Only</span>
+                                </div>
+                              </div>
+
+                              <button
+                                onClick={() => handleDisconnectAccount(acc.email, acc.type)}
+                                disabled={disconnectingEmail === acc.email}
+                                style={{
+                                  padding: '7px 12px',
+                                  background: 'rgba(239, 68, 68, 0.08)',
+                                  border: '1px solid rgba(239, 68, 68, 0.25)',
+                                  borderRadius: '8px',
+                                  color: '#f87171',
+                                  fontSize: '0.78rem',
+                                  fontWeight: '600',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  gap: '6px',
+                                  width: '100%',
+                                  transition: 'all 0.2s ease'
+                                }}
+                              >
+                                {disconnectingEmail === acc.email ? (
+                                  <>
+                                    <Loader2 size={12} className="animate-spin" />
+                                    <span>Disconnecting...</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Trash2 size={12} />
+                                    <span>Disconnect Mailbox</span>
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                          </TiltCard>
+                        ))}
+                      </div>
+                    ) : (
+                      <div style={{ padding: '16px 20px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px dashed rgba(255,255,255,0.1)', fontSize: '0.82rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
+                        No mailboxes linked yet. Connect your Gmail or Outlook account below to enable automated email reading and 2FA passcode alerts.
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Connect New Mailbox Section */}
+                  <div>
+                    <h4 style={{ fontSize: '0.95rem', fontWeight: '700', color: '#fff', marginBottom: '12px' }}>
+                      Connect New Mailbox
+                    </h4>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+                      
+                      {/* Connect Gmail Account */}
+                      <TiltCard maxTilt={3}>
+                        <div style={{ padding: '20px', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+                              <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(66, 133, 244, 0.1)', border: '1px solid rgba(66, 133, 244, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', color: '#4285F4', fontSize: '1rem' }}>G</div>
+                              <div>
+                                <h4 style={{ fontSize: '0.92rem', fontWeight: '700', color: '#fff' }}>Google Gmail</h4>
+                                <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>Read-Only Inbox Analysis</span>
+                              </div>
+                            </div>
+                            <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: '16px', lineHeight: '1.4' }}>
+                              Authorize Jorgius to read unread Gmail messages, extract 2FA codes, and summarize important emails.
+                            </p>
+                          </div>
+                          <a
+                            href="https://notification-assistant.onrender.com/auth/login"
+                            target="_blank"
+                            rel="noreferrer"
+                            className="btn-primary"
+                            style={{ width: '100%', padding: '10px', justifyContent: 'center', fontSize: '0.84rem', gap: '6px', textDecoration: 'none', background: 'linear-gradient(135deg, #4285F4 0%, #34a853 100%)' }}
+                          >
+                            <span>Connect Google Account</span>
+                          </a>
+                        </div>
+                      </TiltCard>
+
+                      {/* Connect Outlook Account */}
+                      <TiltCard maxTilt={3}>
+                        <div style={{ padding: '20px', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+                              <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(0, 120, 212, 0.1)', border: '1px solid rgba(0, 120, 212, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', color: '#0078D4', fontSize: '1rem' }}>O</div>
+                              <div>
+                                <h4 style={{ fontSize: '0.92rem', fontWeight: '700', color: '#fff' }}>Outlook / Office 365</h4>
+                                <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>Read-Only Inbox Analysis</span>
+                              </div>
+                            </div>
+                            <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: '16px', lineHeight: '1.4' }}>
+                              Connect your Microsoft Outlook or Office 365 inbox for automated unread email polling and alerts.
+                            </p>
+                          </div>
+                          <a
+                            href="https://notification-assistant.onrender.com/auth/microsoft/login"
+                            target="_blank"
+                            rel="noreferrer"
+                            className="btn-primary"
+                            style={{ width: '100%', padding: '10px', justifyContent: 'center', fontSize: '0.84rem', gap: '6px', textDecoration: 'none', background: 'linear-gradient(135deg, #0078d4 0%, #005a9e 100%)' }}
+                          >
+                            <span>Connect Outlook Account</span>
+                          </a>
+                        </div>
+                      </TiltCard>
+
+                    </div>
+                  </div>
 
                 </div>
               )}

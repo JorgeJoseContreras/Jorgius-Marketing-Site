@@ -183,6 +183,20 @@ export default function AdminPanel({ onBack, embedded = false }) {
               style={{ width: '100%' }}
             />
           </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '6px' }}>
+              Status Active Date / Retro Date
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. August 23, 2026"
+              value={statusData.creationDate || statusData.lastUpdatedDisplay || ''}
+              onChange={(e) => setStatusData({ ...statusData, creationDate: e.target.value, lastUpdatedDisplay: e.target.value })}
+              className="form-input"
+              style={{ width: '100%' }}
+            />
+          </div>
         </div>
 
         {/* Component Status Grid */}
@@ -235,19 +249,36 @@ export default function AdminPanel({ onBack, embedded = false }) {
         </h3>
 
         <form onSubmit={handleAddIncident} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <div>
-            <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>
-              Incident Title
-            </label>
-            <input
-              type="text"
-              placeholder="e.g. Scheduled System Maintenance"
-              value={newTitle}
-              onChange={(e) => setNewTitle(e.target.value)}
-              className="form-input"
-              style={{ width: '100%', fontSize: '0.85rem' }}
-              required
-            />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                Incident Title
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. Scheduled System Maintenance"
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+                className="form-input"
+                style={{ width: '100%', fontSize: '0.85rem' }}
+                required
+              />
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                Incident Date / Retro Date (e.g. July 15, 2026)
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. August 23, 2026 or July 1, 2026"
+                value={newDate}
+                onChange={(e) => setNewDate(e.target.value)}
+                className="form-input"
+                style={{ width: '100%', fontSize: '0.85rem' }}
+                required
+              />
+            </div>
           </div>
 
           <div>
@@ -290,31 +321,49 @@ export default function AdminPanel({ onBack, embedded = false }) {
                   gap: '12px',
                 }}
               >
-                <div>
+                <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: '700', fontSize: '0.9rem', color: '#fff' }}>{inc.title}</div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px' }}>{inc.date}</div>
                   <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>{inc.message}</p>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => handleDeleteIncident(inc.id)}
-                  style={{
-                    background: 'rgba(239, 68, 68, 0.15)',
-                    border: '1px solid rgba(239, 68, 68, 0.3)',
-                    color: '#fca5a5',
-                    borderRadius: '6px',
-                    padding: '6px',
-                    cursor: 'pointer',
-                  }}
-                  title="Delete log"
-                >
-                  <Trash2 size={14} />
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <input
+                    type="text"
+                    value={inc.date}
+                    onChange={(e) => {
+                      const updatedIncidents = statusData.incidents.map((it) => (it.id === inc.id ? { ...it, date: e.target.value } : it));
+                      setStatusData({ ...statusData, incidents: updatedIncidents });
+                    }}
+                    className="form-input"
+                    title="Edit date of this log"
+                    style={{ fontSize: '0.74rem', padding: '3px 8px', width: '130px' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteIncident(inc.id)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: 'rgba(255, 255, 255, 0.4)',
+                      cursor: 'pointer',
+                      padding: '4px',
+                      display: 'flex',
+                      alignItems: 'center',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = '#ef4444')}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = 'rgba(255, 255, 255, 0.4)')}
+                    title="Delete this incident"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </div>
               </div>
             ))
           ) : (
-            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>No incident logs recorded.</div>
+            <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', padding: '12px', textAlign: 'center' }}>
+              No incidents posted.
+            </div>
           )}
         </div>
       </div>

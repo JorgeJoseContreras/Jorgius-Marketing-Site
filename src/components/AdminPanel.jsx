@@ -41,23 +41,30 @@ export default function AdminPanel({ onBack, embedded = false }) {
 
     const newInc = {
       id: Date.now(),
-      title: newTitle,
-      message: newMessage,
-      date: newDate,
-      type: statusData.statusCode,
+      title: newTitle.trim(),
+      message: newMessage.trim(),
+      date: newDate.trim(),
+      type: statusData.statusCode || 'operational',
     };
 
     const updatedIncidents = [newInc, ...(statusData.incidents || [])];
     const updated = { ...statusData, incidents: updatedIncidents };
     setStatusData(updated);
+    saveSystemStatus(updated);
 
     setNewTitle('');
     setNewMessage('');
+    setSavedSuccess(true);
+    setTimeout(() => setSavedSuccess(false), 2500);
   };
 
   const handleDeleteIncident = (id) => {
-    const updatedIncidents = statusData.incidents.filter((inc) => inc.id !== id);
-    setStatusData({ ...statusData, incidents: updatedIncidents });
+    const updatedIncidents = (statusData.incidents || []).filter((inc) => inc.id !== id);
+    const updated = { ...statusData, incidents: updatedIncidents };
+    setStatusData(updated);
+    saveSystemStatus(updated);
+    setSavedSuccess(true);
+    setTimeout(() => setSavedSuccess(false), 2500);
   };
 
   const content = (
@@ -338,7 +345,9 @@ export default function AdminPanel({ onBack, embedded = false }) {
                     value={inc.date}
                     onChange={(e) => {
                       const updatedIncidents = statusData.incidents.map((it) => (it.id === inc.id ? { ...it, date: e.target.value } : it));
-                      setStatusData({ ...statusData, incidents: updatedIncidents });
+                      const updated = { ...statusData, incidents: updatedIncidents };
+                      setStatusData(updated);
+                      saveSystemStatus(updated);
                     }}
                     className="form-input"
                     title="Edit date of this log"

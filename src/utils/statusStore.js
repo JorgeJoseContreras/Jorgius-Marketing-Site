@@ -83,12 +83,46 @@ export const saveSystemStatus = (newStatusData) => {
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
     window.dispatchEvent(new Event('status-update'));
+
+    // Asynchronously sync to backend DB
+    fetch('https://notification-assistant.onrender.com/api/system-status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: updated })
+    }).catch((err) => console.warn('Status cloud sync note:', err));
+
     return true;
   } catch (e) {
     console.error('Error saving status to localStorage:', e);
     return false;
   }
 };
+
+export const fetchRemoteStatus = async () => {
+  try {
+    const res = await fetch('https://notification-assistant.onrender.com/api/system-status');
+    if (res.ok) {
+      const data = await res.json();
+      if (data.ok && data.status) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data.status));
+        if (data.status.version) {
+          localStorage.setItem(VERSION_KEY, data.status.version);
+          window.dispatchEvent(new Event('version-update'));
+        }
+        window.dispatchEvent(new Event('status-update'));
+        return data.status;
+      }
+    }
+  } catch (e) {
+    console.warn('Unable to reach status cloud API:', e);
+  }
+  return null;
+};
+
+// Initial background sync
+if (typeof window !== 'undefined') {
+  fetchRemoteStatus();
+}
 
 export const getAppVersion = () => {
   try {
@@ -102,6 +136,10 @@ export const saveAppVersion = (newVersion) => {
   try {
     localStorage.setItem(VERSION_KEY, newVersion);
     window.dispatchEvent(new Event('version-update'));
+
+    // Also sync to backend status
+    const cur = getSystemStatus();
+    saveSystemStatus({ ...cur, version: newVersion });
     return true;
   } catch (e) {
     return false;

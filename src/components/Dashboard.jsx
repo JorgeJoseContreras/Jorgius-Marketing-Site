@@ -5,7 +5,7 @@ import { getAppVersion } from '../utils/statusStore';
 import TiltCard from './TiltCard';
 import CustomSelect from './CustomSelect';
 import AdminPanel from './AdminPanel';
-import { LogOut, Save, Loader2, CheckCircle2, AlertCircle, Phone, Sparkles, Shield, User, Settings, HelpCircle, MessageSquare, Edit2, Users, CreditCard, Zap, Crown, XCircle, Send, Cpu, UserPlus, Gift, Copy, Check, Activity, BarChart3, ShieldAlert, Mail, Lock, ShieldCheck, Trash2, RefreshCw, ExternalLink, Brain, BookOpen, Database, Tag, Plus } from 'lucide-react';
+import { LogOut, Save, Loader2, CheckCircle2, AlertCircle, Phone, Sparkles, Shield, User, Settings, HelpCircle, MessageSquare, Edit2, Users, CreditCard, Zap, Crown, XCircle, Send, Cpu, UserPlus, Gift, Copy, Check, Activity, BarChart3, ShieldAlert, Mail, Lock, ShieldCheck, Trash2, RefreshCw, ExternalLink, Brain, BookOpen, Database, Tag, Plus, Calendar } from 'lucide-react';
 
 const getWeb3FormsKey = () => atob("N2FhNTQxMzMtYWMzMS00MTY3LWI3N2YtY2MzOGRkNzNhMjIw");
 const getHelpWeb3FormsKey = () => "6e12e079-3a7a-4550-9962-abca5fe691c9";
@@ -78,6 +78,14 @@ export default function Dashboard({ user, onSignOut, onOpenStatus }) {
   const [connectedAccounts, setConnectedAccounts] = useState([]);
   const [loadingAccounts, setLoadingAccounts] = useState(false);
   const [disconnectingEmail, setDisconnectingEmail] = useState(null);
+
+  // Apple iCloud Calendar state
+  const [appleEmail, setAppleEmail] = useState('');
+  const [applePassword, setApplePassword] = useState('');
+  const [appleInfo, setAppleInfo] = useState({ connected: false, apple_id: null, calendars: [] });
+  const [loadingApple, setLoadingApple] = useState(false);
+  const [connectingApple, setConnectingApple] = useState(false);
+  const [appleMsg, setAppleMsg] = useState('');
 
   // Contacts & Address Book state
   const [contacts, setContacts] = useState([]);
@@ -405,9 +413,89 @@ export default function Dashboard({ user, onSignOut, onOpenStatus }) {
     }
   };
 
-  // Eagerly pre-load connected accounts on initial render and when tab switches
+  const fetchAppleInfo = async () => {
+    setLoadingApple(true);
+    try {
+      const meta = user?.user_metadata || {};
+      const rawPhone = phoneNumber || meta.phone_number || (isAdmin ? '+19549997574' : '');
+      const res = await fetch(`https://notification-assistant.onrender.com/api/user/apple-credentials?phone=${encodeURIComponent(rawPhone)}`);
+      if (res.ok) {
+        const data = await res.json();
+        setAppleInfo(data);
+        if (data.apple_id) setAppleEmail(data.apple_id);
+      }
+    } catch (e) {
+      console.error('Error fetching Apple info:', e);
+    } finally {
+      setLoadingApple(false);
+    }
+  };
+
+  const handleConnectApple = async (e) => {
+    e.preventDefault();
+    if (!appleEmail.trim() || !applePassword.trim()) {
+      setAppleMsg('Please provide both your Apple ID email and 16-character App-Specific Password.');
+      return;
+    }
+    setConnectingApple(true);
+    setAppleMsg('');
+    try {
+      const meta = user?.user_metadata || {};
+      const rawPhone = phoneNumber || meta.phone_number || (isAdmin ? '+19549997574' : '');
+      const res = await fetch('https://notification-assistant.onrender.com/api/user/apple-credentials', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: rawPhone,
+          apple_id: appleEmail.trim(),
+          app_password: applePassword.trim()
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setAppleInfo({ connected: true, apple_id: data.apple_id, calendars: data.calendars || [] });
+        setApplePassword('');
+        setSuccessMsg(`🍏 ${data.message}`);
+        await fetchConnectedAccounts();
+        setTimeout(() => setSuccessMsg(''), 6000);
+      } else {
+        setAppleMsg(data.error || 'Failed to connect Apple Calendar.');
+      }
+    } catch (err) {
+      setAppleMsg('Connection error: ' + err.message);
+    } finally {
+      setConnectingApple(false);
+    }
+  };
+
+  const handleDisconnectApple = async () => {
+    if (!window.confirm('Disconnect your Apple iCloud Calendar? Jorgius will no longer auto-sync calendar events.')) return;
+    setConnectingApple(true);
+    try {
+      const meta = user?.user_metadata || {};
+      const rawPhone = phoneNumber || meta.phone_number || (isAdmin ? '+19549997574' : '');
+      const res = await fetch(`https://notification-assistant.onrender.com/api/user/apple-credentials?phone=${encodeURIComponent(rawPhone)}`, {
+        method: 'DELETE'
+      });
+      const data = await res.json();
+      if (data.success) {
+        setAppleInfo({ connected: false, apple_id: null, calendars: [] });
+        setApplePassword('');
+        setSuccessMsg('🍏 Disconnected Apple iCloud Calendar.');
+        await fetchConnectedAccounts();
+        setTimeout(() => setSuccessMsg(''), 5000);
+      }
+    } catch (err) {
+      setErrorMsg('Error disconnecting: ' + err.message);
+    } finally {
+      setConnectingApple(false);
+    }
+  };
+
+  // Eagerly pre-load connected accounts & Apple info on initial render and when tab switches
   useEffect(() => {
     fetchConnectedAccounts();
+    fetchAppleInfo();
   }, [user, phoneNumber, isAdmin, activeTab]);
 
   const handleSetDefaultEmail = async (accountEmail, accountType) => {
@@ -2253,6 +2341,123 @@ export default function Dashboard({ user, onSignOut, onOpenStatus }) {
                           >
                             <span>Connect Outlook Account</span>
                           </a>
+                        </div>
+                      </TiltCard>
+
+                      {/* Connect Apple iCloud Calendar */}
+                      <TiltCard maxTilt={3}>
+                        <div style={{ padding: '20px', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.1)', border: '1px solid rgba(255, 255, 255, 0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem' }}>
+                                  🍏
+                                </div>
+                                <div>
+                                  <h4 style={{ fontSize: '0.92rem', fontWeight: '700', color: '#fff' }}>Apple iCloud Calendar</h4>
+                                  <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>2-Way Direct CalDAV Sync</span>
+                                </div>
+                              </div>
+                              {appleInfo.connected && (
+                                <span style={{ fontSize: '0.68rem', background: 'rgba(52, 211, 153, 0.15)', color: '#34d399', border: '1px solid rgba(52, 211, 153, 0.3)', padding: '2px 8px', borderRadius: '8px', fontWeight: '700' }}>
+                                  ✓ Connected
+                                </span>
+                              )}
+                            </div>
+
+                            <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: '14px', lineHeight: '1.4' }}>
+                              Directly create, reschedule, and delete events on your native iPhone, Apple Watch, and Mac Calendar in real time.
+                            </p>
+
+                            {appleInfo.connected ? (
+                              <div style={{ background: 'rgba(255,255,255,0.02)', padding: '12px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.06)', marginBottom: '14px' }}>
+                                <div style={{ fontSize: '0.78rem', color: '#fff', fontWeight: '600', marginBottom: '4px' }}>
+                                  Linked Apple ID: <span style={{ color: '#38bdf8' }}>{appleInfo.apple_id}</span>
+                                </div>
+                                <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
+                                  Synced Calendars: {appleInfo.calendars?.join(', ') || 'Main, Personal'}
+                                </div>
+                              </div>
+                            ) : (
+                              <form onSubmit={handleConnectApple} style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '14px' }}>
+                                <div>
+                                  <label style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                                    Apple ID Email
+                                  </label>
+                                  <input
+                                    type="email"
+                                    placeholder="name@icloud.com or name@gmail.com"
+                                    value={appleEmail}
+                                    onChange={(e) => setAppleEmail(e.target.value)}
+                                    className="form-input"
+                                    style={{ width: '100%', fontSize: '0.82rem', padding: '8px 10px' }}
+                                    required
+                                  />
+                                </div>
+
+                                <div>
+                                  <label style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                                    App-Specific Password
+                                  </label>
+                                  <input
+                                    type="password"
+                                    placeholder="xxxx-xxxx-xxxx-xxxx"
+                                    value={applePassword}
+                                    onChange={(e) => setApplePassword(e.target.value)}
+                                    className="form-input"
+                                    style={{ width: '100%', fontSize: '0.82rem', padding: '8px 10px' }}
+                                    required
+                                  />
+                                </div>
+
+                                <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', lineHeight: '1.35' }}>
+                                  🔒 Generate an App-Specific Password at <a href="https://appleid.apple.com" target="_blank" rel="noreferrer" style={{ color: '#818cf8', textDecoration: 'underline' }}>appleid.apple.com</a> under <strong>Sign-In and Security → App-Specific Passwords</strong>.
+                                </div>
+
+                                {appleMsg && (
+                                  <div style={{ fontSize: '0.75rem', color: '#f87171', background: 'rgba(239,68,68,0.1)', padding: '6px 8px', borderRadius: '6px' }}>
+                                    {appleMsg}
+                                  </div>
+                                )}
+
+                                <button
+                                  type="submit"
+                                  disabled={connectingApple}
+                                  className="btn-primary"
+                                  style={{ width: '100%', padding: '9px', justifyContent: 'center', fontSize: '0.82rem', gap: '6px', marginTop: '4px' }}
+                                >
+                                  {connectingApple ? <Loader2 size={13} className="animate-spin" /> : <Calendar size={13} />}
+                                  <span>{connectingApple ? 'Verifying with Apple...' : 'Connect Apple Calendar'}</span>
+                                </button>
+                              </form>
+                            )}
+                          </div>
+
+                          {appleInfo.connected && (
+                            <button
+                              onClick={handleDisconnectApple}
+                              disabled={connectingApple}
+                              style={{
+                                padding: '8px 12px',
+                                background: 'rgba(239, 68, 68, 0.08)',
+                                border: '1px solid rgba(239, 68, 68, 0.25)',
+                                borderRadius: '8px',
+                                color: '#f87171',
+                                fontSize: '0.78rem',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '6px',
+                                width: '100%',
+                                transition: 'all 0.2s ease'
+                              }}
+                            >
+                              {connectingApple ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
+                              <span>Disconnect Apple Calendar</span>
+                            </button>
+                          )}
                         </div>
                       </TiltCard>
 

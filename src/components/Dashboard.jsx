@@ -5,7 +5,7 @@ import { getAppVersion } from '../utils/statusStore';
 import TiltCard from './TiltCard';
 import CustomSelect from './CustomSelect';
 import AdminPanel from './AdminPanel';
-import { LogOut, Save, Loader2, CheckCircle2, AlertCircle, Phone, Sparkles, Shield, User, Settings, HelpCircle, MessageSquare, Edit2, Users, CreditCard, Zap, Crown, XCircle, Send, Cpu, UserPlus, Gift, Copy, Check, Activity, BarChart3, ShieldAlert, Mail, Lock, ShieldCheck, Trash2, RefreshCw, ExternalLink } from 'lucide-react';
+import { LogOut, Save, Loader2, CheckCircle2, AlertCircle, Phone, Sparkles, Shield, User, Settings, HelpCircle, MessageSquare, Edit2, Users, CreditCard, Zap, Crown, XCircle, Send, Cpu, UserPlus, Gift, Copy, Check, Activity, BarChart3, ShieldAlert, Mail, Lock, ShieldCheck, Trash2, RefreshCw, ExternalLink, Brain, BookOpen, Database, Tag, Plus } from 'lucide-react';
 
 const getWeb3FormsKey = () => atob("N2FhNTQxMzMtYWMzMS00MTY3LWI3N2YtY2MzOGRkNzNhMjIw");
 const getHelpWeb3FormsKey = () => "6e12e079-3a7a-4550-9962-abca5fe691c9";
@@ -94,6 +94,16 @@ export default function Dashboard({ user, onSignOut, onOpenStatus }) {
   const [calls, setCalls] = useState([]);
   const [loadingCalls, setLoadingCalls] = useState(false);
   const [expandedCallId, setExpandedCallId] = useState(null);
+
+  // Memory & Knowledge Bank state
+  const [memories, setMemories] = useState([]);
+  const [loadingMemories, setLoadingMemories] = useState(false);
+  const [memorySearch, setMemorySearch] = useState('');
+  const [memoryCategoryFilter, setMemoryCategoryFilter] = useState('all');
+  const [showAddMemoryModal, setShowAddMemoryModal] = useState(false);
+  const [newMemoryText, setNewMemoryText] = useState('');
+  const [newMemoryCategory, setNewMemoryCategory] = useState('general');
+  const [savingMemory, setSavingMemory] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
@@ -237,11 +247,77 @@ export default function Dashboard({ user, onSignOut, onOpenStatus }) {
     }
   };
 
+  const fetchMemories = async () => {
+    const rawDigits = (phoneNumber || '').replace(/\D/g, '');
+    const phoneParam = rawDigits ? `+1${rawDigits}` : (user?.email || '+19549997574');
+    setLoadingMemories(true);
+    try {
+      const res = await fetch(`https://notification-assistant.onrender.com/api/user/memories?phone=${encodeURIComponent(phoneParam)}`);
+      if (res.ok) {
+        const data = await res.json();
+        setMemories(data.memories || []);
+      }
+    } catch (err) {
+      console.error('Error fetching memories:', err);
+    } finally {
+      setLoadingMemories(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'knowledge') {
+      fetchMemories();
+    }
+  }, [activeTab, phoneNumber, user]);
+
+  const handleAddMemory = async (e) => {
+    e.preventDefault();
+    if (!newMemoryText.trim()) return;
+    setSavingMemory(true);
+    const rawDigits = (phoneNumber || '').replace(/\D/g, '');
+    const phoneParam = rawDigits ? `+1${rawDigits}` : (user?.email || '+19549997574');
+    try {
+      const res = await fetch('https://notification-assistant.onrender.com/api/user/memories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: phoneParam,
+          fact_text: newMemoryText.trim(),
+          category: newMemoryCategory
+        })
+      });
+      if (res.ok) {
+        setNewMemoryText('');
+        setShowAddMemoryModal(false);
+        await fetchMemories();
+      }
+    } catch (err) {
+      console.error('Error adding memory:', err);
+    } finally {
+      setSavingMemory(false);
+    }
+  };
+
+  const handleDeleteMemory = async (factId, text) => {
+    if (!window.confirm(`Delete this learned memory from Jorgius Knowledge Bank?\n\n"${text}"`)) return;
+    try {
+      const res = await fetch(`https://notification-assistant.onrender.com/api/user/memories?id=${factId}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) {
+        await fetchMemories();
+      }
+    } catch (err) {
+      console.error('Error deleting memory:', err);
+    }
+  };
+
   const navTabs = [
     { id: 'settings', label: 'Settings', icon: Settings },
     { id: 'interactions', label: 'Interactions', icon: MessageSquare },
     { id: 'voice', label: 'Voice & Phone Calls', icon: Phone, isUltra: true },
     { id: 'contacts', label: 'Contacts & Address Book', icon: Users, isUltra: true },
+    { id: 'knowledge', label: 'Memory & Knowledge Bank', icon: Brain, isUltra: true },
     { id: 'email', label: 'Email Analysis', icon: Mail, isUltra: true },
     { id: 'subscription', label: 'Manage Subscription', icon: CreditCard },
     { id: 'invite', label: 'Invite Users', icon: UserPlus },
@@ -1087,6 +1163,10 @@ export default function Dashboard({ user, onSignOut, onOpenStatus }) {
               <h2 style={{ fontSize: '1.45rem', fontWeight: '800', color: '#fff', fontFamily: 'var(--font-heading)' }}>
                 {activeTab === 'settings' && 'Account Settings'}
                 {activeTab === 'interactions' && 'Jorgius Interactions'}
+                {activeTab === 'voice' && 'Voice Calls & Phone Logs'}
+                {activeTab === 'contacts' && 'Contacts & Address Book'}
+                {activeTab === 'knowledge' && 'Memory & Knowledge Bank'}
+                {activeTab === 'email' && 'Email Intelligence & Sync'}
                 {activeTab === 'subscription' && 'Manage Subscription'}
                 {activeTab === 'invite' && 'Invite Users & Referrals'}
                 {activeTab === 'support' && 'Help & Support'}
@@ -2179,6 +2259,339 @@ export default function Dashboard({ user, onSignOut, onOpenStatus }) {
                     </div>
                   </div>
 
+                </div>
+              )}
+
+            </div>
+          )}
+
+          {/* TAB: MEMORY & KNOWLEDGE BANK */}
+          {activeTab === 'knowledge' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              
+              {/* Knowledge Bank Header Card */}
+              <TiltCard maxTilt={2}>
+                <div style={{ padding: '24px', background: 'linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                      <div style={{ padding: '12px', background: 'rgba(255,255,255,0.08)', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Brain size={26} color="#fff" />
+                      </div>
+                      <div>
+                        <h3 style={{ fontSize: '1.2rem', fontWeight: '800', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          Personal Memory & Knowledge Bank
+                          <span style={{ fontSize: '0.72rem', background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', padding: '2px 8px', borderRadius: '12px', fontWeight: '600' }}>
+                            Recursive AI Active
+                          </span>
+                        </h3>
+                        <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                          Everything Jorgius has permanently learned about your VIPs, preferences, habits, and scheduling rules across iMessage & Voice Calls.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <button
+                        onClick={fetchMemories}
+                        className="btn-secondary"
+                        style={{ padding: '8px 12px', fontSize: '0.82rem', gap: '6px' }}
+                        title="Refresh Knowledge Bank"
+                      >
+                        <RefreshCw size={14} className={loadingMemories ? 'animate-spin' : ''} /> Refresh
+                      </button>
+                      <button
+                        onClick={() => setShowAddMemoryModal(true)}
+                        className="btn-primary"
+                        style={{ padding: '8px 14px', fontSize: '0.82rem', gap: '6px' }}
+                      >
+                        <Plus size={14} /> Add New Memory
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </TiltCard>
+
+              {/* Ultra Gatekeeper if not Ultra */}
+              {plan !== 'ultra' && !isAdmin && (
+                <TiltCard maxTilt={2}>
+                  <div style={{ padding: '24px', background: 'rgba(239, 68, 68, 0.08)', borderRadius: '16px', border: '1px solid rgba(239, 68, 68, 0.25)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <Lock size={22} color="#f87171" />
+                      <div>
+                        <h4 style={{ fontSize: '0.95rem', fontWeight: '700', color: '#fff' }}>
+                          Unlock Full Interactive Knowledge Bank with Jorgius Ultra
+                        </h4>
+                        <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                          Ultra members can view, edit, search, and manage long-term recursive AI facts, relationships, and habits in real-time.
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setShowCheckoutModal(true)}
+                      className="btn-primary"
+                      style={{ fontSize: '0.82rem', padding: '8px 16px', background: '#f59e0b', borderColor: '#f59e0b' }}
+                    >
+                      Upgrade to Ultra
+                    </button>
+                  </div>
+                </TiltCard>
+              )}
+
+              {/* Search & Category Filter Bar */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                <div style={{ flex: 1, minWidth: '220px', position: 'relative' }}>
+                  <input
+                    type="text"
+                    placeholder="Search memories, VIPs, preferences, or rules..."
+                    value={memorySearch}
+                    onChange={(e) => setMemorySearch(e.target.value)}
+                    className="form-input"
+                    style={{ width: '100%', fontSize: '0.85rem', paddingLeft: '14px' }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px' }}>
+                  {[
+                    { id: 'all', label: 'All Memories' },
+                    { id: 'relationship', label: '👥 Relationships' },
+                    { id: 'schedule_preference', label: '⏰ Schedule' },
+                    { id: 'tone_preference', label: '✍️ Tone & Style' },
+                    { id: 'habit', label: '⚡ Habits' },
+                    { id: 'rule', label: '🛡️ Rules' },
+                    { id: 'general', label: '🧠 Facts' },
+                  ].map((cat) => (
+                    <button
+                      key={cat.id}
+                      onClick={() => setMemoryCategoryFilter(cat.id)}
+                      style={{
+                        padding: '6px 12px',
+                        borderRadius: '20px',
+                        fontSize: '0.75rem',
+                        fontWeight: '600',
+                        border: '1px solid',
+                        borderColor: memoryCategoryFilter === cat.id ? '#fff' : 'rgba(255,255,255,0.08)',
+                        background: memoryCategoryFilter === cat.id ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.02)',
+                        color: memoryCategoryFilter === cat.id ? '#fff' : 'var(--text-secondary)',
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      {cat.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Memories List / Grid */}
+              {loadingMemories ? (
+                <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                  <Loader2 size={24} className="animate-spin" style={{ margin: '0 auto 12px auto' }} />
+                  <span>Loading learned facts from Knowledge Bank...</span>
+                </div>
+              ) : memories.length === 0 ? (
+                <TiltCard maxTilt={1}>
+                  <div style={{ padding: '40px', textAlign: 'center', background: 'rgba(255,255,255,0.02)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    <Brain size={36} color="rgba(255,255,255,0.2)" style={{ margin: '0 auto 12px auto' }} />
+                    <h4 style={{ fontSize: '1rem', fontWeight: '700', color: '#fff', marginBottom: '6px' }}>
+                      No Memories Stored Yet
+                    </h4>
+                    <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', maxWidth: '440px', margin: '0 auto 16px auto' }}>
+                      As you text or talk with Jorgius, he will automatically extract and remember key facts about you, your team, and your schedule.
+                    </p>
+                    <button
+                      onClick={() => setShowAddMemoryModal(true)}
+                      className="btn-primary"
+                      style={{ fontSize: '0.82rem', padding: '8px 16px', margin: '0 auto' }}
+                    >
+                      <Plus size={14} /> Add First Memory Manually
+                    </button>
+                  </div>
+                </TiltCard>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '14px' }}>
+                  {memories
+                    .filter((m) => {
+                      if (memoryCategoryFilter !== 'all' && m.category !== memoryCategoryFilter) return false;
+                      if (!memorySearch) return true;
+                      const q = memorySearch.toLowerCase();
+                      return (m.fact_text || '').toLowerCase().includes(q) || (m.category || '').toLowerCase().includes(q);
+                    })
+                    .map((m) => {
+                      let catLabel = '🧠 Fact';
+                      let catColor = '#38bdf8';
+                      let catBg = 'rgba(56, 189, 248, 0.1)';
+                      let catBorder = 'rgba(56, 189, 248, 0.25)';
+
+                      if (m.category === 'relationship') {
+                        catLabel = '👥 Relationship';
+                        catColor = '#a78bfa';
+                        catBg = 'rgba(167, 139, 250, 0.1)';
+                        catBorder = 'rgba(167, 139, 250, 0.25)';
+                      } else if (m.category === 'schedule_preference') {
+                        catLabel = '⏰ Schedule';
+                        catColor = '#34d399';
+                        catBg = 'rgba(52, 211, 153, 0.1)';
+                        catBorder = 'rgba(52, 211, 153, 0.25)';
+                      } else if (m.category === 'tone_preference') {
+                        catLabel = '✍️ Tone';
+                        catColor = '#fbbf24';
+                        catBg = 'rgba(251, 191, 36, 0.1)';
+                        catBorder = 'rgba(251, 191, 36, 0.25)';
+                      } else if (m.category === 'habit') {
+                        catLabel = '⚡ Habit';
+                        catColor = '#f472b6';
+                        catBg = 'rgba(244, 114, 182, 0.1)';
+                        catBorder = 'rgba(244, 114, 182, 0.25)';
+                      } else if (m.category === 'rule') {
+                        catLabel = '🛡️ Rule';
+                        catColor = '#ef4444';
+                        catBg = 'rgba(239, 68, 68, 0.1)';
+                        catBorder = 'rgba(239, 68, 68, 0.25)';
+                      }
+
+                      return (
+                        <div
+                          key={m.id}
+                          style={{
+                            padding: '18px',
+                            background: 'rgba(255, 255, 255, 0.02)',
+                            borderRadius: '14px',
+                            border: '1px solid rgba(255, 255, 255, 0.07)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'space-between',
+                            gap: '12px',
+                            position: 'relative',
+                            transition: 'transform 0.2s ease, border-color 0.2s ease'
+                          }}
+                        >
+                          <div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                              <span
+                                style={{
+                                  fontSize: '0.72rem',
+                                  padding: '2px 8px',
+                                  borderRadius: '12px',
+                                  fontWeight: '700',
+                                  color: catColor,
+                                  background: catBg,
+                                  border: `1px solid ${catBorder}`
+                                }}
+                              >
+                                {catLabel}
+                              </span>
+
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontSize: '0.68rem', color: '#34d399', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                                  <ShieldCheck size={12} /> Active Fact
+                                </span>
+                                <button
+                                  onClick={() => handleDeleteMemory(m.id, m.fact_text)}
+                                  style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    color: 'rgba(255, 255, 255, 0.3)',
+                                    cursor: 'pointer',
+                                    padding: '2px',
+                                    display: 'flex',
+                                    alignItems: 'center'
+                                  }}
+                                  onMouseEnter={(e) => e.currentTarget.style.color = '#ef4444'}
+                                  onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255, 255, 255, 0.3)'}
+                                  title="Delete memory"
+                                >
+                                  <Trash2 size={13} />
+                                </button>
+                              </div>
+                            </div>
+
+                            <p style={{ fontSize: '0.88rem', color: '#fff', lineHeight: '1.45', fontWeight: '500' }}>
+                              {m.fact_text}
+                            </p>
+                          </div>
+
+                          {m.created_at && (
+                            <span style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: '6px' }}>
+                              Learned: {m.created_at}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                </div>
+              )}
+
+              {/* Add Memory Modal */}
+              {showAddMemoryModal && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
+                  <div style={{ width: '100%', maxWidth: '480px', background: '#0e1017', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '16px', padding: '26px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                      <h3 style={{ fontSize: '1.15rem', fontWeight: '800', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Brain size={18} color="#fff" /> Add Permanent Memory to Knowledge Bank
+                      </h3>
+                      <button onClick={() => setShowAddMemoryModal(false)} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: '1.2rem' }}>✕</button>
+                    </div>
+
+                    <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '18px' }}>
+                      Add a permanent truth or instruction. Jorgius will inject this into his real-time reasoning across all conversations.
+                    </p>
+
+                    <form onSubmit={handleAddMemory} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: '6px' }}>
+                          Memory Category
+                        </label>
+                        <CustomSelect
+                          value={newMemoryCategory}
+                          onChange={(val) => setNewMemoryCategory(val)}
+                          placeholder="Select category..."
+                          options={[
+                            { value: 'general', label: '🧠 Personal Fact / Background' },
+                            { value: 'relationship', label: '👥 Relationship / VIP Contact' },
+                            { value: 'schedule_preference', label: '⏰ Schedule / Routine Preference' },
+                            { value: 'tone_preference', label: '✍️ Tone / Communication Style' },
+                            { value: 'habit', label: '⚡ Daily Habit' },
+                            { value: 'rule', label: '🛡️ Strict Assistant Rule' },
+                          ]}
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: '6px' }}>
+                          Fact / Memory Description
+                        </label>
+                        <textarea
+                          placeholder="e.g. 'Justin Bender is my lead developer and co-founder' or 'Never schedule meetings before 10 AM EST'"
+                          value={newMemoryText}
+                          onChange={(e) => setNewMemoryText(e.target.value)}
+                          className="form-input"
+                          rows={3}
+                          style={{ width: '100%', resize: 'vertical' }}
+                          required
+                        />
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '6px' }}>
+                        <button
+                          type="button"
+                          onClick={() => setShowAddMemoryModal(false)}
+                          className="btn-secondary"
+                          style={{ fontSize: '0.85rem' }}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="submit"
+                          className="btn-primary"
+                          disabled={savingMemory}
+                          style={{ fontSize: '0.85rem', gap: '6px' }}
+                        >
+                          {savingMemory ? <Loader2 size={14} className="animate-spin" /> : <><Plus size={14} /> Save to Knowledge Bank</>}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
                 </div>
               )}
 

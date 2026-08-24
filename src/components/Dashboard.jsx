@@ -44,6 +44,7 @@ export default function Dashboard({ user, onSignOut, onOpenStatus }) {
   const [knownName, setKnownName] = useState('');
   const [assistantName, setAssistantName] = useState('');
   const [assistantStyle, setAssistantStyle] = useState('default');
+  const [voiceName, setVoiceName] = useState('Adam');
   
   // Help Form fields
   const [helpMsg, setHelpMsg] = useState('');
@@ -372,6 +373,8 @@ export default function Dashboard({ user, onSignOut, onOpenStatus }) {
       setKnownName(meta.known_name || (isJustin ? 'Justin' : ''));
       setAssistantName(meta.assistant_name || 'Jorgius');
       setAssistantStyle(meta.assistant_style || 'default');
+      if (meta.voice_name) setVoiceName(meta.voice_name);
+      fetchVoice();
 
 
 
@@ -428,6 +431,45 @@ export default function Dashboard({ user, onSignOut, onOpenStatus }) {
       console.error('Error fetching Apple info:', e);
     } finally {
       setLoadingApple(false);
+    }
+  };
+
+  const fetchVoice = async () => {
+    if (!user) return;
+    try {
+      const meta = user.user_metadata || {};
+      const rawPhone = phoneNumber || meta.phone_number || (isAdmin ? '+19549997574' : '');
+      const res = await fetch(`https://notification-assistant.onrender.com/api/user/voice?phone=${encodeURIComponent(rawPhone)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.current_voice?.name) {
+          setVoiceName(data.current_voice.name);
+        }
+      }
+    } catch (err) {
+      console.warn('Error fetching voice preference:', err);
+    }
+  };
+
+  const handleSaveVoice = async (selectedVoiceName) => {
+    setVoiceName(selectedVoiceName);
+    try {
+      const meta = user?.user_metadata || {};
+      const rawPhone = phoneNumber || meta.phone_number || (isAdmin ? '+19549997574' : '');
+      await fetch('https://notification-assistant.onrender.com/api/user/voice', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: rawPhone,
+          voice: selectedVoiceName,
+          user_id: user?.email || rawPhone
+        })
+      });
+      await supabase.auth.updateUser({
+        data: { voice_name: selectedVoiceName }
+      });
+    } catch (e) {
+      console.error("Error updating voice:", e);
     }
   };
 
@@ -1557,7 +1599,7 @@ export default function Dashboard({ user, onSignOut, onOpenStatus }) {
                 </TiltCard>
               ) : (
                 /* Ultra / Admin Active Voice Controls */
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
                   
                   {/* Phone Call Card */}
                   <TiltCard maxTilt={3}>
@@ -1598,6 +1640,57 @@ export default function Dashboard({ user, onSignOut, onOpenStatus }) {
                     </div>
                   </TiltCard>
 
+                  {/* Voice Persona & Style Selection Card */}
+                  <TiltCard maxTilt={3}>
+                    <div style={{ padding: '24px', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                          <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Sparkles size={18} color="#818cf8" />
+                          </div>
+                          <div>
+                            <h4 style={{ fontSize: '0.98rem', fontWeight: '700', color: '#fff' }}>Assistant Voice Persona</h4>
+                            <span style={{ fontSize: '0.75rem', color: '#818cf8', fontWeight: '600' }}>● Dedicated To Your Account</span>
+                          </div>
+                        </div>
+
+                        <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '14px', lineHeight: '1.45' }}>
+                          Select your preferred voice persona for phone calls and scheduled voice briefings.
+                        </p>
+
+                        <div style={{ marginBottom: '16px' }}>
+                          <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: '6px' }}>
+                            Active Voice
+                          </label>
+                          <CustomSelect
+                            value={voiceName}
+                            onChange={(val) => handleSaveVoice(val)}
+                            options={[
+                              { value: 'Adam', label: 'Adam (Deep, Smooth Male - Default)' },
+                              { value: 'Sarah', label: 'Sarah (Soft, Calm Female)' },
+                              { value: 'Alice', label: 'Alice (Gentle, Whispery British Female)' },
+                              { value: 'Charlie', label: 'Charlie (Soft-Spoken, Friendly Male)' },
+                              { value: 'Lily', label: 'Lily (Warm, Soft British Female)' },
+                              { value: 'Rachel', label: 'Rachel (Warm, Engaging Female)' },
+                              { value: 'Freya', label: 'Freya (Modern, Expressive Female)' },
+                              { value: 'Josh', label: 'Josh (Deep, Authoritative Male)' },
+                              { value: 'Daniel', label: 'Daniel (Authoritative British Male)' },
+                              { value: 'George', label: 'George (Classic British Storyteller)' },
+                              { value: 'Antoni', label: 'Antoni (Energetic, Upbeat Male)' },
+                              { value: 'Domi', label: 'Domi (Strong, Energetic Female)' },
+                              { value: 'Nova', label: 'Nova (Upbeat, Natural Female)' },
+                              { value: 'Onyx', label: 'Onyx (Deep Baritone Male)' }
+                            ]}
+                          />
+                        </div>
+                      </div>
+
+                      <div style={{ marginTop: '12px', padding: '10px 12px', borderRadius: '8px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', fontSize: '0.76rem', color: 'var(--text-secondary)' }}>
+                        💡 <em>Tip:</em> You can also tell Jorgius on a call: <strong>"Do a softer voice"</strong> to cycle styles automatically!
+                      </div>
+                    </div>
+                  </TiltCard>
+
                   {/* Capabilities Card */}
                   <TiltCard maxTilt={3}>
                     <div style={{ padding: '24px', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
@@ -1616,11 +1709,11 @@ export default function Dashboard({ user, onSignOut, onOpenStatus }) {
                           </li>
                           <li style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
                             <span style={{ color: '#34d399', fontWeight: '700' }}>•</span>
-                            <span><em>"Send a text message to Alex saying I will be there at 5."</em></span>
+                            <span><em>"Can you do a softer voice?"</em></span>
                           </li>
                           <li style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
                             <span style={{ color: '#34d399', fontWeight: '700' }}>•</span>
-                            <span><em>"Switch topics anytime — Jorgius adapts instantly."</em></span>
+                            <span><em>"Send a text to Alex saying I'm on my way."</em></span>
                           </li>
                         </ul>
                       </div>

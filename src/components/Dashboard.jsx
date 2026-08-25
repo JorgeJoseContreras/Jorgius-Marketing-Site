@@ -5,7 +5,7 @@ import { getAppVersion } from '../utils/statusStore';
 import TiltCard from './TiltCard';
 import CustomSelect from './CustomSelect';
 import AdminPanel from './AdminPanel';
-import { LogOut, Save, Loader2, CheckCircle2, AlertCircle, Phone, Sparkles, Shield, User, Settings, HelpCircle, MessageSquare, Edit2, Users, CreditCard, Zap, Crown, XCircle, Send, Cpu, UserPlus, Gift, Copy, Check, Activity, BarChart3, ShieldAlert, Mail, Lock, ShieldCheck, Trash2, RefreshCw, ExternalLink, Brain, BookOpen, Database, Tag, Plus, Calendar } from 'lucide-react';
+import { LogOut, Save, Loader2, CheckCircle2, AlertCircle, Phone, Sparkles, Shield, User, Settings, HelpCircle, MessageSquare, Edit2, Users, CreditCard, Zap, Crown, XCircle, Send, Cpu, UserPlus, Gift, Copy, Check, Activity, BarChart3, ShieldAlert, Mail, Lock, ShieldCheck, Trash2, RefreshCw, ExternalLink, Brain, BookOpen, Database, Tag, Plus, Calendar, Receipt } from 'lucide-react';
 
 const getWeb3FormsKey = () => atob("N2FhNTQxMzMtYWMzMS00MTY3LWI3N2YtY2MzOGRkNzNhMjIw");
 const getHelpWeb3FormsKey = () => "6e12e079-3a7a-4550-9962-abca5fe691c9";
@@ -98,6 +98,12 @@ export default function Dashboard({ user, onSignOut, onOpenStatus }) {
   const [newContactEmail, setNewContactEmail] = useState('');
   const [newContactNotes, setNewContactNotes] = useState('');
   const [editingContactId, setEditingContactId] = useState(null);
+
+  // Expenses & Receipts state
+  const [expenses, setExpenses] = useState([]);
+  const [expensesTotal, setExpensesTotal] = useState(0);
+  const [loadingExpenses, setLoadingExpenses] = useState(false);
+  const [isPlayingVoiceSample, setIsPlayingVoiceSample] = useState(false);
 
   // Call Logs & Transcripts state
   const [calls, setCalls] = useState([]);
@@ -276,6 +282,8 @@ export default function Dashboard({ user, onSignOut, onOpenStatus }) {
   useEffect(() => {
     if (activeTab === 'knowledge') {
       fetchMemories();
+    } else if (activeTab === 'expenses') {
+      fetchExpenses();
     }
   }, [activeTab, phoneNumber, user]);
 
@@ -326,6 +334,7 @@ export default function Dashboard({ user, onSignOut, onOpenStatus }) {
     { id: 'interactions', label: 'Interactions', icon: MessageSquare },
     { id: 'voice', label: 'Voice & Phone Calls', icon: Phone, isUltra: true },
     { id: 'contacts', label: 'Contacts & Address Book', icon: Users, isUltra: true },
+    { id: 'expenses', label: 'Receipts & Expenses', icon: Receipt, isUltra: true },
     { id: 'knowledge', label: 'Memory & Knowledge Bank', icon: Brain, isUltra: true },
     { id: 'email', label: 'Email Analysis', icon: Mail, isUltra: true },
     { id: 'subscription', label: 'Manage Subscription', icon: CreditCard },
@@ -470,6 +479,63 @@ export default function Dashboard({ user, onSignOut, onOpenStatus }) {
       });
     } catch (e) {
       console.error("Error updating voice:", e);
+    }
+  };
+
+  const playVoiceSample = (targetVoice) => {
+    const vName = targetVoice || voiceName || 'Adam';
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(`Hello! I am ${assistantName || 'Jorgius'}, speaking with your selected ${vName} voice persona.`);
+      if (['Sarah', 'Alice', 'Lily', 'Rachel', 'Freya', 'Nova', 'Domi', 'Dorothy', 'Shimmer'].includes(vName)) {
+        utterance.pitch = 1.15;
+        utterance.rate = 0.98;
+      } else if (['Adam', 'Josh', 'Arnold', 'Onyx'].includes(vName)) {
+        utterance.pitch = 0.82;
+        utterance.rate = 1.02;
+      } else {
+        utterance.pitch = 1.0;
+        utterance.rate = 1.05;
+      }
+      setIsPlayingVoiceSample(true);
+      utterance.onend = () => setIsPlayingVoiceSample(false);
+      utterance.onerror = () => setIsPlayingVoiceSample(false);
+      window.speechSynthesis.speak(utterance);
+    }
+  };
+
+  const fetchExpenses = async () => {
+    if (!user) return;
+    setLoadingExpenses(true);
+    try {
+      const meta = user.user_metadata || {};
+      const rawPhone = phoneNumber || meta.phone_number || (isAdmin ? '+19549997574' : '');
+      const res = await fetch(`https://notification-assistant.onrender.com/api/user/expenses?phone=${encodeURIComponent(rawPhone)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.ok) {
+          setExpenses(data.expenses || []);
+          setExpensesTotal(data.total || 0);
+        }
+      }
+    } catch (err) {
+      console.warn('Error fetching expenses:', err);
+    } finally {
+      setLoadingExpenses(false);
+    }
+  };
+
+  const handleDeleteExpense = async (id) => {
+    try {
+      const res = await fetch(`https://notification-assistant.onrender.com/api/user/expenses?id=${id}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) {
+        setExpenses(prev => prev.filter(e => e.id !== id));
+        setExpensesTotal(prev => Math.max(0, prev - (expenses.find(e => e.id === id)?.amount || 0)));
+      }
+    } catch (err) {
+      console.error('Error deleting expense:', err);
     }
   };
 
@@ -1295,6 +1361,7 @@ export default function Dashboard({ user, onSignOut, onOpenStatus }) {
                 {activeTab === 'interactions' && 'Jorgius Interactions'}
                 {activeTab === 'voice' && 'Voice Calls & Phone Logs'}
                 {activeTab === 'contacts' && 'Contacts & Address Book'}
+                {activeTab === 'expenses' && 'Receipts & Expense Tracker'}
                 {activeTab === 'knowledge' && 'Memory & Knowledge Bank'}
                 {activeTab === 'email' && 'Email Intelligence & Sync'}
                 {activeTab === 'subscription' && 'Manage Subscription'}
@@ -1683,6 +1750,16 @@ export default function Dashboard({ user, onSignOut, onOpenStatus }) {
                             ]}
                           />
                         </div>
+
+                        <button
+                          type="button"
+                          onClick={() => playVoiceSample(voiceName)}
+                          disabled={isPlayingVoiceSample}
+                          className="btn-ghost"
+                          style={{ width: '100%', padding: '9px 12px', fontSize: '0.8rem', gap: '6px', justifyContent: 'center', background: 'rgba(99, 102, 241, 0.08)', border: '1px solid rgba(99, 102, 241, 0.2)', color: '#a5b4fc', borderRadius: '10px' }}
+                        >
+                          <span>{isPlayingVoiceSample ? "🔊 Playing Sample..." : `▶️ Listen to ${voiceName} Voice Sample`}</span>
+                        </button>
                       </div>
 
                       <div style={{ marginTop: '12px', padding: '10px 12px', borderRadius: '8px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', fontSize: '0.76rem', color: 'var(--text-secondary)' }}>
@@ -2137,6 +2214,159 @@ export default function Dashboard({ user, onSignOut, onOpenStatus }) {
                   </div>
                 </div>
               )}
+
+            </div>
+          )}
+
+          {/* TAB: RECEIPTS & EXPENSES */}
+          {activeTab === 'expenses' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              
+              {/* Header Card */}
+              <TiltCard maxTilt={2}>
+                <div style={{ padding: '24px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '14px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{ padding: '10px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Receipt size={22} color="#10b981" />
+                      </div>
+                      <div>
+                        <h3 style={{ fontSize: '1.15rem', fontWeight: '800', color: '#fff' }}>
+                          Receipts &amp; Expense Tracker
+                        </h3>
+                        <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                          AI multimodal vision receipt scanning &amp; per-user expense breakdown.
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={fetchExpenses}
+                      className="btn-ghost"
+                      style={{ padding: '8px 14px', fontSize: '0.8rem', gap: '6px' }}
+                      disabled={loadingExpenses}
+                    >
+                      <RefreshCw size={14} className={loadingExpenses ? "spin" : ""} />
+                      <span>Refresh</span>
+                    </button>
+                  </div>
+                </div>
+              </TiltCard>
+
+              {/* Stats Overview */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+                <TiltCard maxTilt={3}>
+                  <div style={{ padding: '20px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Total Recorded Spend</span>
+                    <h2 style={{ fontSize: '1.8rem', fontWeight: '800', color: '#10b981', marginTop: '6px' }}>
+                      ${expensesTotal.toFixed(2)}
+                    </h2>
+                  </div>
+                </TiltCard>
+
+                <TiltCard maxTilt={3}>
+                  <div style={{ padding: '20px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Receipts Logged</span>
+                    <h2 style={{ fontSize: '1.8rem', fontWeight: '800', color: '#fff', marginTop: '6px' }}>
+                      {expenses.length}
+                    </h2>
+                  </div>
+                </TiltCard>
+
+                <TiltCard maxTilt={3}>
+                  <div style={{ padding: '20px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Categories</span>
+                    <h2 style={{ fontSize: '1.8rem', fontWeight: '800', color: '#818cf8', marginTop: '6px' }}>
+                      {new Set(expenses.map(e => e.category)).size}
+                    </h2>
+                  </div>
+                </TiltCard>
+              </div>
+
+              {/* Vision Camera Guide Banner */}
+              <div style={{ padding: '16px 20px', borderRadius: '14px', background: 'rgba(16, 185, 129, 0.06)', border: '1px solid rgba(16, 185, 129, 0.2)', display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <div style={{ fontSize: '1.6rem' }}>📸</div>
+                <div style={{ fontSize: '0.84rem', color: '#d1fae5', lineHeight: '1.45' }}>
+                  <strong>Multimodal OCR Receipt Scanning:</strong> Snap and send a photo of any receipt, dinner bill, or paper invoice on iMessage. Jorgius automatically extracts the merchant, dollar amount, category, and date!
+                </div>
+              </div>
+
+              {/* Expense List Table Card */}
+              <TiltCard maxTilt={2}>
+                <div style={{ padding: '24px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                  <h4 style={{ fontSize: '1rem', fontWeight: '700', color: '#fff', marginBottom: '16px' }}>
+                    Recent Expenses &amp; Purchases
+                  </h4>
+
+                  {loadingExpenses ? (
+                    <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                      <Loader2 size={24} className="spin" style={{ margin: '0 auto 10px' }} />
+                      <p style={{ fontSize: '0.85rem' }}>Loading expenses...</p>
+                    </div>
+                  ) : expenses.length === 0 ? (
+                    <div style={{ padding: '40px 20px', textAlign: 'center', background: 'rgba(255,255,255,0.01)', borderRadius: '12px', border: '1px dashed rgba(255,255,255,0.1)' }}>
+                      <Receipt size={32} color="rgba(255,255,255,0.2)" style={{ margin: '0 auto 12px' }} />
+                      <p style={{ fontSize: '0.9rem', color: '#fff', fontWeight: '600', marginBottom: '4px' }}>No expenses recorded yet</p>
+                      <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                        Text a photo of a receipt or text <em>"Spent $25 on lunch at Chipotle"</em> to get started.
+                      </p>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      {expenses.map((exp) => (
+                        <div
+                          key={exp.id}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '14px 18px',
+                            borderRadius: '12px',
+                            background: 'rgba(255, 255, 255, 0.03)',
+                            border: '1px solid rgba(255, 255, 255, 0.06)',
+                            gap: '12px',
+                            flexWrap: 'wrap'
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                            <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', color: '#10b981', fontSize: '0.95rem' }}>
+                              🧾
+                            </div>
+                            <div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontWeight: '700', color: '#fff', fontSize: '0.92rem' }}>{exp.merchant}</span>
+                                <span style={{ fontSize: '0.72rem', padding: '2px 8px', borderRadius: '6px', background: 'rgba(99, 102, 241, 0.15)', color: '#a5b4fc', fontWeight: '600' }}>
+                                  {exp.category}
+                                </span>
+                              </div>
+                              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                                <span>{exp.date || 'Recent'}</span>
+                                {exp.notes && <span> • {exp.notes}</span>}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                            <span style={{ fontSize: '1.1rem', fontWeight: '800', color: '#10b981' }}>
+                              ${exp.amount.toFixed(2)}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteExpense(exp.id)}
+                              className="btn-ghost"
+                              style={{ padding: '6px', color: '#ef4444', background: 'rgba(239, 68, 68, 0.08)', borderRadius: '8px' }}
+                              title="Delete Expense"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </TiltCard>
 
             </div>
           )}

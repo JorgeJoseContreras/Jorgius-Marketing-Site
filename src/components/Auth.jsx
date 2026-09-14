@@ -59,6 +59,8 @@ export default function Auth({ onBack, onAuthSuccess }) {
       const msg = err.message || '';
       if (msg.includes('504') || msg.includes('timeout') || err.status === 504) {
         setErrorMsg('Email server timed out (504). Please turn off "Confirm Email" in Supabase Dashboard -> Auth -> Providers -> Email.');
+      } else if (msg.toLowerCase().includes('failed to fetch') || msg.toLowerCase().includes('network') || (typeof navigator !== 'undefined' && !navigator.onLine)) {
+        setErrorMsg('Unable to connect to auth server. Your Supabase project is likely paused due to inactivity. Restore it in your Supabase dashboard (supabase.com) to resume.');
       } else {
         setErrorMsg(msg || 'Authentication failed. Please check your credentials.');
       }
